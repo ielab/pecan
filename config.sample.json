@@ -1,0 +1,19 @@
+{
+  "slack": {
+    "token": "supersecret",
+    "verification_token": "supersecret",
+    "client_id": "supersecret",
+    "client_secret": "supersecret"
+  },
+  "elasticsearch": {
+    "login": {
+      "username": "optional",
+      "password": "optional"
+    },
+    "index": "index",
+    "url": "http://127.0.0.1:9200"
+  },
+  "secrets": {
+    "cookie": "supersecret"
+  }
+}
