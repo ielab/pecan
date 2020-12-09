@@ -15,5 +15,9 @@
   },
   "secrets": {
     "cookie": "supersecret"
+  },
+  "options": {
+    "dev_environment": true,
+    "dev_channels": []
   }
 }

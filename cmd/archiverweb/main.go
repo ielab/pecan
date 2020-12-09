@@ -44,42 +44,49 @@ func main() {
 	router.LoadHTMLGlob("./web/*.html")
 	router.Static("/static/", "./web/static")
 
-	store := cookie.NewStore([]byte(config.Secrets.Cookie))
-	router.Use(sessions.Sessions("slack-archive", store))
-
 	// Middleware for redirecting for authentication.
-	router.Use(func(c *gin.Context) {
-		if strings.Contains(c.Request.URL.Path, "/login") {
-			c.Next()
-			return
-		}
-		session := sessions.Default(c)
-		token := session.Get("token")
-		if token == nil || len(token.(string)) == 0 {
-			c.Redirect(http.StatusFound, "/login")
-			c.Abort()
-			return
-		}
-		if accessToken, ok := tokens[token.(string)]; !ok {
-			c.Redirect(http.StatusFound, "/login")
-			c.Abort()
-			return
-		} else {
-			if _, err = slack.New(accessToken).GetIMChannels(); err != nil {
+	if !config.Options.DevEnvironment { // Bypass this if we are in the dev environment.
+		store := cookie.NewStore([]byte(config.Secrets.Cookie))
+		router.Use(sessions.Sessions("slack-archive", store))
+
+		router.Use(func(c *gin.Context) {
+			if strings.Contains(c.Request.URL.Path, "/login") {
+				c.Next()
+				return
+			}
+			session := sessions.Default(c)
+			token := session.Get("token")
+			if token == nil || len(token.(string)) == 0 {
 				c.Redirect(http.StatusFound, "/login")
 				c.Abort()
 				return
 			}
-		}
+			if accessToken, ok := tokens[token.(string)]; !ok {
+				c.Redirect(http.StatusFound, "/login")
+				c.Abort()
+				return
+			} else {
+				if _, err = slack.New(accessToken).GetIMChannels(); err != nil {
+					c.Redirect(http.StatusFound, "/login")
+					c.Abort()
+					return
+				}
+			}
 
-		c.Next()
-	})
+			c.Next()
+		})
+	}
 
 	router.GET("/", func(c *gin.Context) {
-		session := sessions.Default(c)
 
-		token := session.Get("token").(string)
-		accessToken := tokens[token]
+		// If production environment, get the access token of the user.
+		var accessToken string
+		if !config.Options.DevEnvironment {
+			session := sessions.Default(c)
+
+			token := session.Get("token").(string)
+			accessToken = tokens[token]
+		}
 
 		// Default time values.
 		from := "2010-01-01"
@@ -94,18 +101,38 @@ func main() {
 		// Otherwise show recent messages.
 		if err := c.ShouldBind(&request); err == nil && len(request.Query) > 0 {
 			responseType = slackarchive.SEARCH
-			messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
-			if err != nil {
-				panic(err)
+
+			// Determine which method should be used to search.
+			if config.Options.DevEnvironment {
+				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
+				if err != nil {
+					panic(err)
+				}
 			}
+
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
 		} else {
 			responseType = slackarchive.RECENT
-			messages, err = slackarchive.GetRecentMessages(es, api, ctx, accessToken)
-			if err != nil {
-				panic(err)
+
+			// Determine which method should be used for recent messages.
+			if config.Options.DevEnvironment {
+				messages, err = config.DevEnvironment.DevGetRecentMessages(es, ctx, config.Options.DevChannels)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				messages, err = slackarchive.GetRecentMessages(es, api, ctx, accessToken)
+				if err != nil {
+					panic(err)
+				}
 			}
+
 		}
 
 		// Compute next and previous scrolls.
@@ -161,6 +188,17 @@ func main() {
 		return
 	})
 
+	fmt.Print(`
+       .__                 __                         .__    .__              
+  _____|  | _____    ____ |  | _______ _______   ____ |  |__ |__|__  __ ____  
+ /  ___/  | \__  \ _/ ___\|  |/ /\__  \\_  __ \_/ ___\|  |  \|  \  \/ // __ \ 
+ \___ \|  |__/ __ \\  \___|    <  / __ \|  | \/\  \___|   Y  \  |\   /\  ___/ 
+/____  >____(____  /\___  >__|_ \(____  /__|    \___  >___|  /__| \_/  \___  >
+     \/          \/     \/     \/     \/            \/     \/              \/ 
+
+	go -> http://localhost:4713
+
+`)
 	log.Fatalln(router.Run(":4713"))
 
 }

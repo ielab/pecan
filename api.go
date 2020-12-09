@@ -10,6 +10,7 @@ var userCache map[string]string
 var channelCache map[string]string
 var idsCache *cache.Cache
 
+// LookupUsernameByID retrieves the username for a slack user by their internal slack id.
 func LookupUsernameByID(api *slack.Client, id string) (string, error) {
 	if userCache == nil {
 		userCache = make(map[string]string)
@@ -25,6 +26,7 @@ func LookupUsernameByID(api *slack.Client, id string) (string, error) {
 	return u.Name, nil
 }
 
+// LookupGroupNameByID retrieves the group name for a slack group by its internal slack id.
 func LookupGroupNameByID(api *slack.Client, id string) (string, error) {
 	if channelCache == nil {
 		channelCache = make(map[string]string)
@@ -60,6 +62,7 @@ func LookupGroupNameByID(api *slack.Client, id string) (string, error) {
 	return id, nil
 }
 
+// GetChannelsForUser retrieves the channels the user has permission to access.
 func GetChannelsForUser(accessToken string) ([]string, error) {
 	// Get the ids from a cache if they already exist.
 	if idsCache == nil {
@@ -75,6 +78,7 @@ func GetChannelsForUser(accessToken string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Public conversations for all users.
 	conversations, _, err := api.GetConversationsForUser(&slack.GetConversationsForUserParameters{})
 	if err != nil {
