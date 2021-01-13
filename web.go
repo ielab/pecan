@@ -21,12 +21,15 @@ type SearchResponse struct {
 	Messages []slack.Message
 	Date     string
 
-	Query string
-	From  string
-	To    string
-	Next  int
-	Prev  int
-	Took  time.Duration
+	Query     string
+	From      string
+	To        string
+	Next      int
+	Prev      int
+	Took      time.Duration
+	Page      int
+	PrevPage  int
+	NextPage  int
 }
 
 type SearchRequest struct {
@@ -37,4 +40,5 @@ type SearchRequest struct {
 	Start int `form:"start"`
 	Next  int `form:"next"`
 	Prev  int `form:"prev"`
+	Page  int `form:"page"`
 }

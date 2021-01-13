@@ -80,6 +80,10 @@ func searchResponseToMessagesUsingAPI(resp *elastic.SearchResult, api *slack.Cli
 // searchResponseToMessages maps responses from elasticsearch into slack messages,
 // leaving slack ids for channels and names unresolved.
 func searchResponseToMessages(resp *elastic.SearchResult) ([]slack.Message, error) {
+	if resp == nil{
+		messages := make([]slack.Message, 0)
+		return messages, nil
+	}
 	messages := make([]slack.Message, len(resp.Hits.Hits))
 	for i := range resp.Hits.Hits {
 		b, err := resp.Hits.Hits[i].Source.MarshalJSON()
@@ -146,6 +150,52 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 		Do(ctx)
 }
 
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string) (*elastic.SearchResult, error) {
+	var t float64
+	var err error
+	var result *elastic.SearchResult
+	var left []slack.Message
+	var right []slack.Message
+	t,err = strconv.ParseFloat(TimeStamp,64)
+
+	if err != nil {
+		panic(err)
+	}
+	var lower int64
+	var upper int64
+	lower = 60
+	upper = 60
+
+	for len(left) <= 6 && lower < 61140{
+		result, err = es.Search("slack-archive").
+			Query(elastic.NewBoolQuery().Must(
+				elastic.NewRangeQuery("ts").Gte(int64(t)-lower).Lte(int64(t)),
+				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+			Size(SearchSize).
+			Sort("ts", false).
+			Do(ctx)
+		left,err = searchResponseToMessages(result)
+		lower = lower*2
+	}
+	for len(right) <= 6 && upper < 61140 {
+		result, err = es.Search("slack-archive").
+			Query(elastic.NewBoolQuery().Must(
+				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t)+upper),
+				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+			Size(SearchSize).
+			Sort("ts", false).
+			Do(ctx)
+		right,err = searchResponseToMessages(result)
+		upper = upper*2
+	}
+	return es.Search("slack-archive").
+		Query(elastic.NewBoolQuery().Must(
+			elastic.NewRangeQuery("ts").Gte(int64(t)-lower/4).Lte(int64(t)+upper/4),
+			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+		Size(SearchSize).
+		Sort("ts", false).
+		Do(ctx)
+}
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
 // and then retrieves messages from these channels using a search request.
 func GetMessages(es *elastic.Client, api *slack.Client, ctx context.Context, accessToken string, request SearchRequest) ([]slack.Message, error) {
@@ -158,7 +208,6 @@ func GetMessages(es *elastic.Client, api *slack.Client, ctx context.Context, acc
 	if err != nil {
 		return nil, err
 	}
-
 	return searchResponseToMessagesUsingAPI(resp, api)
 }
 
@@ -196,6 +245,29 @@ func getMessagesDev(es *elastic.Client, ctx context.Context, channels []string, 
 	if err != nil {
 		return nil, err
 	}
-
 	return searchResponseToMessages(resp)
+}
+
+func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]slack.Message, error) {
+	resp, err := queryMessages(es, ctx, channels, request)
+	if err != nil {
+		return nil, err
+	}
+	var messages []slack.Message
+	messages,err = searchResponseToMessages(resp)
+	var conversations [][]slack.Message
+	for i := range messages{
+		var (
+			convChannel []string
+			t           string
+		)
+		t = messages[i].Timestamp
+		convChannel = append(convChannel,messages[i].Channel)
+		var respConv *elastic.SearchResult
+		respConv, err = queryConversation(es,ctx, convChannel,t)
+		var conversation []slack.Message
+		conversation,err = searchResponseToMessages(respConv)
+		conversations = append(conversations,conversation)
+	}
+	return conversations,err
 }

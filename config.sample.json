@@ -10,7 +10,7 @@
       "username": "optional",
       "password": "optional"
     },
-    "index": "index",
+    "index": "slack-archive",
     "url": "http://127.0.0.1:9200"
   },
   "secrets": {
@@ -18,6 +18,6 @@
   },
   "options": {
     "dev_environment": true,
-    "dev_channels": []
+    "dev_channels": ["CD7NZ7EQ2","C3A8MFLTV","C39L50ZFB"]
   }
 }

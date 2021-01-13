@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 )
-
 func randState() string {
 	b := make([]byte, 32)
 	rand.Read(b)
@@ -24,7 +23,7 @@ func randState() string {
 }
 
 func main() {
-	config, err := slackarchive.NewConfig("config.json")
+	config, err := slackarchive.NewConfig("config.sample.json")
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +32,7 @@ func main() {
 
 	ctx := context.Background()
 
-	es, err := elastic.NewClient(elastic.SetURL(config.Elasticsearch.Url))
+	es, err := elastic.NewClient(elastic.SetURL(config.Elasticsearch.Url),elastic.SetSniff(false))
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +86,7 @@ func main() {
 			token := session.Get("token").(string)
 			accessToken = tokens[token]
 		}
-
+		page := 1
 		// Default time values.
 		from := "2010-01-01"
 		to := time.Now().Format("2006-01-02")
@@ -96,6 +95,7 @@ func main() {
 			request      slackarchive.SearchRequest
 			messages     []slack.Message
 			responseType slackarchive.SearchResponseType
+			conversations [][]slack.Message
 		)
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.
@@ -105,16 +105,33 @@ func main() {
 			// Determine which method should be used to search.
 			if config.Options.DevEnvironment {
 				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
-				if err != nil {
-					panic(err)
-				}
+
+				conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
+
+				/*
+				var clusters []string
+				for i := range conversations{
+					var arg string
+					arg = ""
+					for j := range conversations[i]{
+						arg = arg + conversations[i][j].Text+"§"
+					}
+					cmd := exec.Command("python", "../python/cluster.py",arg)
+					//fmt.Println(arg)
+					var out []byte
+					out,err = cmd.CombinedOutput()
+					fmt.Println(string(out))
+					clusters= append(clusters, string(out))
+					break
+				}*/
+
 			} else {
 				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
 				if err != nil {
 					panic(err)
 				}
 			}
-
+			page = request.Page
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
 		} else {
@@ -123,6 +140,7 @@ func main() {
 			// Determine which method should be used for recent messages.
 			if config.Options.DevEnvironment {
 				messages, err = config.DevEnvironment.DevGetRecentMessages(es, ctx, config.Options.DevChannels)
+				conversations = append(conversations, messages)
 				if err != nil {
 					panic(err)
 				}
@@ -138,6 +156,14 @@ func main() {
 		// Compute next and previous scrolls.
 		next := request.Start + slackarchive.SearchSize
 		prev := request.Start - slackarchive.SearchSize
+		prevpage := page-1
+		nextpage := page+1
+		if prevpage==0{
+			prevpage=1
+		}
+		if nextpage>len(conversations){
+			nextpage = len(conversations)
+		}
 		if next >= len(messages) {
 			next = -1
 		}
@@ -148,15 +174,16 @@ func main() {
 		// Build the response.
 		response := slackarchive.SearchResponse{
 			Type:     responseType,
-			Messages: messages,
+			Messages: conversations[page-1],
 			Query:    request.Query,
 			From:     from,
 			To:       to,
-
 			Next: next,
+			Page: page,
+			PrevPage: prevpage,
+			NextPage: nextpage,
 			Prev: prev,
 		}
-
 		c.HTML(http.StatusOK, "index.html", response)
 		return
 	})
