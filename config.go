@@ -36,7 +36,7 @@ type Config struct {
 	DevEnvironment struct {
 		DevGetMessages       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]slack.Message, error)
 		DevGetRecentMessages func(es *elastic.Client, ctx context.Context, channels []string) ([]slack.Message, error)
-		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]slack.Message, error)
+		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]slack.Message,[][]slack.Message, error)
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 
 const DateFormat = "2006-01-02"
 const ElasticDateFormat = "yyyy-MM-dd"
-const SearchSize = 50
+const SearchSize = 10
 
 type SearchResponseType int
 

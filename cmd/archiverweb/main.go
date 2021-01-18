@@ -13,6 +13,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -105,25 +108,33 @@ func main() {
 			// Determine which method should be used to search.
 			if config.Options.DevEnvironment {
 				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
+				var matches []slack.Message
+				matches,conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
 
-				conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
+				i := request.Page-1
+				var cluster []slack.Message
+				var arg string
+				arg = ""
+				for j := range conversations[i]{
+					arg = arg + conversations[i][j].Text+"§"
+				}
+				cmd := exec.Command("python", "./python/cluster.py",arg,matches[i].Text)
 
-				/*
-				var clusters []string
-				for i := range conversations{
-					var arg string
-					arg = ""
-					for j := range conversations[i]{
-						arg = arg + conversations[i][j].Text+"§"
+				var out []byte
+				out,err = cmd.CombinedOutput()
+				reg := regexp.MustCompile("\r\n")
+				indices := reg.Split(string(out),-1)
+				for j:=range indices {
+					if indices[j]!="" {
+						var index int64
+						index,err = strconv.ParseInt(indices[j],10,64)
+						if err != nil {
+							panic(err)
+						}
+						cluster = append(cluster,conversations[i][index])
 					}
-					cmd := exec.Command("python", "../python/cluster.py",arg)
-					//fmt.Println(arg)
-					var out []byte
-					out,err = cmd.CombinedOutput()
-					fmt.Println(string(out))
-					clusters= append(clusters, string(out))
-					break
-				}*/
+				}
+				messages = cluster
 
 			} else {
 				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
@@ -131,7 +142,7 @@ func main() {
 					panic(err)
 				}
 			}
-			page = request.Page
+			page=request.Page
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
 		} else {
@@ -161,6 +172,7 @@ func main() {
 		if prevpage==0{
 			prevpage=1
 		}
+
 		if nextpage>len(conversations){
 			nextpage = len(conversations)
 		}
@@ -174,7 +186,7 @@ func main() {
 		// Build the response.
 		response := slackarchive.SearchResponse{
 			Type:     responseType,
-			Messages: conversations[page-1],
+			Messages: messages,
 			Query:    request.Query,
 			From:     from,
 			To:       to,

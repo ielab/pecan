@@ -20,14 +20,15 @@
             <label class="full"><input type="search" placeholder="Search for messages" name="q" value="{{ .Query }}"></label>
             <label><input type="date" value="{{ .From }}" name="from"></label>
             <label><input type="date" value="{{ .To }}" name="to"></label>
+            <input type="hidden" name="page" value="{{ .Page }}">
             <input type="hidden" name="start" value="0">
             <label><input type="submit" value="Search"></label>
         </fieldset>
     </form>
     <div class="pagination">
-        <a href="/?q=software&from=2010-01-01&to=2021-01-13&page={{ .PrevPage }}&start=0">&laquo;</a>
-        <a href="/?q=software&from=2010-01-01&to=2021-01-13&page={{ .Page }}&start=0">{{ .Page }}</a>
-        <a href="/?q=software&from=2010-01-01&to=2021-01-13&page={{ .NextPage }}&start=0">&raquo;</a>
+        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .PrevPage }}&start=0">&laquo;</a>
+        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .Page }}&start=0">{{ .Page }}</a>
+        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .NextPage }}&start=0">&raquo;</a>
     </div>
     <hr/>
     <article class="card flex two">
