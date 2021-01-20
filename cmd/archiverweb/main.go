@@ -110,31 +110,33 @@ func main() {
 				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
 				var matches []slack.Message
 				matches,conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
-
-				i := request.Page-1
-				var cluster []slack.Message
-				var arg string
-				arg = ""
-				for j := range conversations[i]{
-					arg = arg + conversations[i][j].Text+"§"
-				}
-				cmd := exec.Command("python", "./python/cluster.py",arg,matches[i].Text)
-
-				var out []byte
-				out,err = cmd.CombinedOutput()
-				reg := regexp.MustCompile("\r\n")
-				indices := reg.Split(string(out),-1)
-				for j:=range indices {
-					if indices[j]!="" {
-						var index int64
-						index,err = strconv.ParseInt(indices[j],10,64)
-						if err != nil {
-							panic(err)
-						}
-						cluster = append(cluster,conversations[i][index])
+				if len(conversations)>0 {
+					i := request.Page - 1
+					var cluster []slack.Message
+					var arg string
+					arg = ""
+					for j := range conversations[i] {
+						arg = arg + conversations[i][j].Text + "§"
 					}
+					cmd := exec.Command("python", "./python/cluster.py", arg, matches[i].Text)
+
+					var out []byte
+					out, err = cmd.CombinedOutput()
+
+					reg := regexp.MustCompile("\r\n")
+					indices := reg.Split(string(out), -1)
+					for j := range indices {
+						if indices[j] != "" {
+							var index int64
+							index, err = strconv.ParseInt(indices[j], 10, 64)
+							if err != nil {
+								panic(err)
+							}
+							cluster = append(cluster, conversations[i][index])
+						}
+					}
+					messages = cluster
 				}
-				messages = cluster
 
 			} else {
 				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)

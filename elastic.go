@@ -151,7 +151,7 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 }
 
 //query a conversation using a message
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string) (slack.Message, *elastic.SearchResult) {
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string,request SearchRequest) (slack.Message, *elastic.SearchResult) {
 	var t float64
 	var err error
 	var result *elastic.SearchResult
@@ -167,10 +167,10 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	lower = 60
 	upper = 60
 	var match slack.Message
-	for len(left) <= 6 && lower < 86400{
+	for len(left) <= 6 && float64(lower) < t-float64(request.From.Unix()){
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(int64(t)-lower).Lte(int64(t)),
+				elastic.NewRangeQuery("ts").Gte(int64(t-float64(lower))).Lte(int64(t)),
 				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
 			Size(SearchSize).
 			Sort("ts", false).
@@ -178,10 +178,10 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 		left,err = searchResponseToMessages(result)
 		lower = lower*2
 	}
-	for len(right) <= 6 && upper < 86400 {
+	for len(right) <= 6 && float64(upper) < float64(request.To.Unix())-t {
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t)+upper),
+				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t+float64(upper))),
 				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
 			Size(SearchSize).
 			Sort("ts", false).
@@ -192,7 +192,7 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	match = left[0]
 	conv,err := es.Search("slack-archive").
 		Query(elastic.NewBoolQuery().Must(
-			elastic.NewRangeQuery("ts").Gte(int64(t)-lower/4).Lte(int64(t)+upper/4),
+			elastic.NewRangeQuery("ts").Gte(int64(t-float64(lower)/4)).Lte(int64(t+float64(upper)/4)),
 			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
 		Size(SearchSize).
 		Sort("ts", false).Do(ctx)
@@ -264,7 +264,7 @@ func getConversationsDev(es *elastic.Client, ctx context.Context, channels []str
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel,messages[i].Channel)
-		match,respConv := queryConversation(es,ctx, convChannel,t)
+		match,respConv := queryConversation(es,ctx, convChannel,t,request)
 		var conversation []slack.Message
 		conversation,err = searchResponseToMessages(respConv)
 		matches = append(matches,match)
