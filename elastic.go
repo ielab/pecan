@@ -3,6 +3,7 @@ package slackarchive
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
 	"strconv"
@@ -117,6 +118,50 @@ func searchResponseToMessages(resp *elastic.SearchResult) ([]slack.Message, erro
 
 }
 
+//Return both messages and scores
+func searchResponseToMessagesAndScores(resp *elastic.SearchResult) ([]slack.Message, []float64,error) {
+	if resp == nil{
+		messages := make([]slack.Message, 0)
+		scores := make([]float64,0)
+		return messages,scores, nil
+	}
+	messages := make([]slack.Message, len(resp.Hits.Hits))
+	scores := make([]float64,len(resp.Hits.Hits))
+	for i := range resp.Hits.Hits {
+		b, err := resp.Hits.Hits[i].Source.MarshalJSON()
+		if err != nil {
+			return nil,nil, err
+		}
+
+		var msg slack.Message
+		var score float64
+		err = json.Unmarshal(b, &msg)
+		if err != nil {
+			return nil,nil, err
+		}
+		if resp.Hits.Hits[i].Score != nil{ //Debug:Check if score is nil
+			score = *resp.Hits.Hits[i].Score
+			fmt.Println(score) //If score is not nil, print it out
+		}
+		// Parse the timestamp into something more readable.
+		t := strings.Split(msg.EventTimestamp, ".")
+		sec, err := strconv.Atoi(t[0])
+		if err != nil {
+			return nil, nil, err
+		}
+		nsec, err := strconv.Atoi(t[1])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		msg.EventTimestamp = time.Unix(int64(sec), int64(nsec)).Format(time.RFC822)
+
+		messages[i] = msg
+		scores[i] = score
+	}
+	return messages, scores, nil
+
+}
 // buildChannelFilterQuery constructs an elasticsearch query that corresponds to a filter on selected channels.
 func buildChannelFilterQuery(channels []string) []elastic.Query {
 	filters := make([]elastic.Query, len(channels))
@@ -151,23 +196,23 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 }
 
 //query a conversation using a message
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string,request SearchRequest) (slack.Message, *elastic.SearchResult) {
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string,request SearchRequest) (slack.Message, []slack.Message,[]float64) {
 	var t float64
 	var err error
 	var result *elastic.SearchResult
 	var left []slack.Message
+	var leftscores []float64
 	var right []slack.Message
+	var rightscores []float64
 	t,err = strconv.ParseFloat(TimeStamp,64)
 
 	if err != nil {
 		panic(err)
 	}
-	var lower int64
-	var upper int64
-	lower = 60
-	upper = 60
+	lower := 60
+	upper := 60
 	var match slack.Message
-	for len(left) <= 6 && float64(lower) < t-float64(request.From.Unix()){
+	for len(left) <= 6 && float64(lower) < t-float64(request.From.Unix()) {
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
 				elastic.NewRangeQuery("ts").Gte(int64(t-float64(lower))).Lte(int64(t)),
@@ -175,9 +220,21 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 			Size(SearchSize).
 			Sort("ts", false).
 			Do(ctx)
-		left,err = searchResponseToMessages(result)
-		lower = lower*2
+		left,leftscores, err = searchResponseToMessagesAndScores(result)
+		lower = lower * 2
+		var temp []slack.Message
+		var tempscores []float64
+		for i := range left{
+			if left[i].Text!=""{
+				temp = append(temp,left[i])
+				tempscores = append(tempscores,leftscores[i])
+			}
+		}
+		left = temp
+		leftscores = tempscores //issue: scores are nil
 	}
+
+
 	for len(right) <= 6 && float64(upper) < float64(request.To.Unix())-t {
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
@@ -186,17 +243,23 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 			Size(SearchSize).
 			Sort("ts", false).
 			Do(ctx)
-		right,err = searchResponseToMessages(result)
+		right,rightscores,err = searchResponseToMessagesAndScores(result)
 		upper = upper*2
+		var temp []slack.Message
+		var tempscores []float64
+		for i := range right{
+			if right[i].Text!=""{
+				temp = append(temp,right[i])
+				tempscores = append(tempscores,rightscores[i])
+			}
+		}
+		right = temp
+		rightscores = tempscores
 	}
 	match = left[0]
-	conv,err := es.Search("slack-archive").
-		Query(elastic.NewBoolQuery().Must(
-			elastic.NewRangeQuery("ts").Gte(int64(t-float64(lower)/4)).Lte(int64(t+float64(upper)/4)),
-			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-		Size(SearchSize).
-		Sort("ts", false).Do(ctx)
-	return match,conv
+	conv := append(right[len(right)-6:len(right)-1],left[:6]...)
+	scores := append(rightscores[len(rightscores)-6:len(rightscores)-1],leftscores[:6]...)
+	return match,conv,scores
 }
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
 // and then retrieves messages from these channels using a search request.
@@ -251,11 +314,12 @@ func getMessagesDev(es *elastic.Client, ctx context.Context, channels []string, 
 }
 
 // retrieves conversations
-func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]slack.Message,[][]slack.Message, error) {
+func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]slack.Message, error) {
 	resp, err := queryMessages(es, ctx, channels, request)
 	var messages []slack.Message
 	messages,err = searchResponseToMessages(resp)
 	var conversations [][]slack.Message
+	var scores [][]float64
 	var matches []slack.Message
 	for i := range messages{
 		var (
@@ -264,11 +328,10 @@ func getConversationsDev(es *elastic.Client, ctx context.Context, channels []str
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel,messages[i].Channel)
-		match,respConv := queryConversation(es,ctx, convChannel,t,request)
-		var conversation []slack.Message
-		conversation,err = searchResponseToMessages(respConv)
+		match,conversation,score := queryConversation(es,ctx, convChannel,t,request)
+		scores = append(scores,score)
 		matches = append(matches,match)
 		conversations = append(conversations,conversation)
 	}
-	return matches,conversations,err
+	return conversations,err
 }

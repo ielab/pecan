@@ -4,8 +4,8 @@
     <list default="true" id="0db6fd2f-f803-4478-879f-54cba93fc7b3" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/archiverweb/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/archiverweb/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/elastic.go" beforeDir="false" afterPath="$PROJECT_DIR$/elastic.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/python/cluster.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

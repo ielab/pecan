@@ -13,9 +13,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os/exec"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -108,8 +105,9 @@ func main() {
 			// Determine which method should be used to search.
 			if config.Options.DevEnvironment {
 				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
-				var matches []slack.Message
-				matches,conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
+				conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
+
+				/* clustering part, ignore it fo now
 				if len(conversations)>0 {
 					i := request.Page - 1
 					var cluster []slack.Message
@@ -136,7 +134,7 @@ func main() {
 						}
 					}
 					messages = cluster
-				}
+				}*/
 
 			} else {
 				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
