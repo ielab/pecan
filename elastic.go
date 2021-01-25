@@ -3,9 +3,9 @@ package slackarchive
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -204,7 +204,7 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 }
 
 //query a conversation using a message
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest) []Message {
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
 	var t float64
 	var err error
 	var result *elastic.SearchResult
@@ -235,14 +235,20 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 		}
 		left = temp
 	}
-
+	var leftMessages []Message
+	if len(left)>=6 {
+		leftMessages = left[:6]
+	}else{
+		leftMessages = left[:len(left)]
+	}
+	leftMessages[0].Score = message.Score
 	for len(right) <= 6 && float64(upper) < float64(request.To.Unix())-t {
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
 				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t+float64(upper))),
 				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
 			Size(SearchSize).
-			Sort("ts", false).
+			Sort("ts", true).
 			Do(ctx)
 		right, err = searchResponseToMessages(result)
 		upper = upper * 2
@@ -254,7 +260,17 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 		}
 		right = temp
 	}
-	conv := append(right[len(right)-6:len(right)-1], left[:6]...)
+	var rightMessages []Message
+	if len(right)>=6{
+		for i := 5 ;i>0;i--{
+			rightMessages = append(rightMessages,right[i])
+		}
+	}else{
+		for i := len(right)-1;i>0;i--{
+			rightMessages = append(rightMessages,right[i])
+		}
+	}
+	conv := append(rightMessages,leftMessages...)
 	return conv
 }
 
@@ -310,22 +326,80 @@ func getMessagesDev(es *elastic.Client, ctx context.Context, channels []string, 
 	return searchResponseToMessages(resp)
 }
 
+func mergeConversations(conversations [][]Message)(mergedConversations [][]Message){
+
+	mergedConversations = make([][]Message,0)
+	channelIndex := make(map[string]int)
+	for i := range conversations{
+		if index,ok:= channelIndex[conversations[i][0].Channel] ;ok {
+			if conversations[i][0].Timestamp >= mergedConversations[index][len(mergedConversations[index])-1].Timestamp {
+				for j := range conversations[i] {
+					if conversations[i][j].Timestamp < mergedConversations[index][len(mergedConversations[index])-1].Timestamp{
+						mergedConversations[index] = append(mergedConversations[index],conversations[i][j])
+					}
+				}
+			}else{
+				mergedConversations = append(mergedConversations,conversations[i])
+				channelIndex[conversations[i][0].Channel] = len(mergedConversations)-1
+			}
+		}else{
+			mergedConversations = append(mergedConversations,conversations[i])
+			channelIndex[conversations[i][0].Channel] = len(mergedConversations)-1
+		}
+	}
+	return mergedConversations
+}
+
+type internalConv struct{
+	conversations [][]Message
+	scores []float64
+}
+
+type sortByScore internalConv
+
+func (sbs sortByScore) Len() int {
+	return len(sbs.conversations)
+}
+
+func (sbs sortByScore) Swap(i,j int){
+	sbs.conversations[i], sbs.conversations[j] = sbs.conversations[j], sbs.conversations[i]
+	sbs.scores[i], sbs.scores[j] = sbs.scores[j], sbs.scores[i]
+}
+
+func (sbs sortByScore) Less(i,j int) bool {
+	return sbs.scores[i] < sbs.scores[j]
+}
+
+func rankConversations(conversations [][]Message)(rankedConversations [][]Message){
+	scores := make([]float64,len(conversations))
+	for i:=range conversations{
+		var score float64
+		score = 0
+		for j:=range conversations[i] {
+			score += conversations[i][j].Score
+		}
+		scores[i]=score
+	}
+	combination := internalConv{conversations: conversations,scores: scores}
+	sort.Sort(sortByScore(combination))
+	return combination.conversations
+}
 // retrieves conversations
 func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]Message, error) {
 	resp, err := queryMessages(es, ctx, channels, request)
 	var messages []Message
 	messages, err = searchResponseToMessagesAndScores(resp)
 	var conversations [][]Message
-	for i, message := range messages {
+
+	for i := range messages {
 		var (
 			convChannel []string
 			t           string
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel, messages[i].Channel)
-		conversation := queryConversation(es, ctx, convChannel, t, request)
+		conversation := queryConversation(es, ctx, convChannel, t, request,messages[i])
 		conversations = append(conversations, conversation)
-		fmt.Println(message.Score) //Print out the sore, 0 means SearchHit.Score is nil
 	}
-	return conversations, err
+	return rankConversations(mergeConversations(conversations)), err
 }
