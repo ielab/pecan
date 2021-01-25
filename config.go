@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
 	"io/ioutil"
 )
@@ -34,9 +33,9 @@ type Config struct {
 		DevChannels    []string `json:"dev_channels"`
 	}
 	DevEnvironment struct {
-		DevGetMessages       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]slack.Message, error)
-		DevGetRecentMessages func(es *elastic.Client, ctx context.Context, channels []string) ([]slack.Message, error)
-		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]slack.Message, error)
+		DevGetMessages       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error)
+		DevGetRecentMessages func(es *elastic.Client, ctx context.Context, channels []string) ([]Message, error)
+		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]Message, error)
 	}
 }
 

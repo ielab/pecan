@@ -93,9 +93,9 @@ func main() {
 
 		var (
 			request      slackarchive.SearchRequest
-			messages     []slack.Message
+			messages     []slackarchive.Message
 			responseType slackarchive.SearchResponseType
-			conversations [][]slack.Message
+			conversations [][]slackarchive.Message
 		)
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.

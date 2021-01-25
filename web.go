@@ -1,7 +1,6 @@
 package slackarchive
 
 import (
-	"github.com/nlopes/slack"
 	"time"
 )
 
@@ -18,18 +17,18 @@ const (
 
 type SearchResponse struct {
 	Type     SearchResponseType
-	Messages []slack.Message
+	Messages []Message
 	Date     string
 
-	Query     string
-	From      string
-	To        string
-	Next      int
-	Prev      int
-	Took      time.Duration
-	Page      int
-	PrevPage  int
-	NextPage  int
+	Query    string
+	From     string
+	To       string
+	Next     int
+	Prev     int
+	Took     time.Duration
+	Page     int
+	PrevPage int
+	NextPage int
 }
 
 type SearchRequest struct {
