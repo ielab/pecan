@@ -196,14 +196,12 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 }
 
 //query a conversation using a message
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string,request SearchRequest) (slack.Message, []slack.Message,[]float64) {
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string,TimeStamp string,request SearchRequest) ([]slack.Message) {
 	var t float64
 	var err error
 	var result *elastic.SearchResult
 	var left []slack.Message
-	var leftscores []float64
 	var right []slack.Message
-	var rightscores []float64
 	t,err = strconv.ParseFloat(TimeStamp,64)
 
 	if err != nil {
@@ -211,7 +209,6 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	}
 	lower := 60
 	upper := 60
-	var match slack.Message
 	for len(left) <= 6 && float64(lower) < t-float64(request.From.Unix()) {
 		result, err = es.Search("slack-archive").
 			Query(elastic.NewBoolQuery().Must(
@@ -220,20 +217,16 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 			Size(SearchSize).
 			Sort("ts", false).
 			Do(ctx)
-		left,leftscores, err = searchResponseToMessagesAndScores(result)
+		left, err = searchResponseToMessages(result)
 		lower = lower * 2
 		var temp []slack.Message
-		var tempscores []float64
 		for i := range left{
 			if left[i].Text!=""{
 				temp = append(temp,left[i])
-				tempscores = append(tempscores,leftscores[i])
 			}
 		}
 		left = temp
-		leftscores = tempscores //issue: scores are nil
 	}
-
 
 	for len(right) <= 6 && float64(upper) < float64(request.To.Unix())-t {
 		result, err = es.Search("slack-archive").
@@ -243,23 +236,18 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 			Size(SearchSize).
 			Sort("ts", false).
 			Do(ctx)
-		right,rightscores,err = searchResponseToMessagesAndScores(result)
+		right,err = searchResponseToMessages(result)
 		upper = upper*2
 		var temp []slack.Message
-		var tempscores []float64
 		for i := range right{
 			if right[i].Text!=""{
 				temp = append(temp,right[i])
-				tempscores = append(tempscores,rightscores[i])
 			}
 		}
 		right = temp
-		rightscores = tempscores
 	}
-	match = left[0]
 	conv := append(right[len(right)-6:len(right)-1],left[:6]...)
-	scores := append(rightscores[len(rightscores)-6:len(rightscores)-1],leftscores[:6]...)
-	return match,conv,scores
+	return conv
 }
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
 // and then retrieves messages from these channels using a search request.
@@ -317,10 +305,9 @@ func getMessagesDev(es *elastic.Client, ctx context.Context, channels []string, 
 func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]slack.Message, error) {
 	resp, err := queryMessages(es, ctx, channels, request)
 	var messages []slack.Message
-	messages,err = searchResponseToMessages(resp)
+	var message_scores []float64
+	messages,message_scores,err = searchResponseToMessagesAndScores(resp)
 	var conversations [][]slack.Message
-	var scores [][]float64
-	var matches []slack.Message
 	for i := range messages{
 		var (
 			convChannel []string
@@ -328,10 +315,9 @@ func getConversationsDev(es *elastic.Client, ctx context.Context, channels []str
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel,messages[i].Channel)
-		match,conversation,score := queryConversation(es,ctx, convChannel,t,request)
-		scores = append(scores,score)
-		matches = append(matches,match)
+		conversation := queryConversation(es,ctx, convChannel,t,request)
 		conversations = append(conversations,conversation)
+		fmt.Println(message_scores[i]) //Print out the sore, 0 means SearchHit.Score is nil
 	}
 	return conversations,err
 }

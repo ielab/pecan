@@ -186,7 +186,7 @@ func main() {
 		// Build the response.
 		response := slackarchive.SearchResponse{
 			Type:     responseType,
-			Messages: messages,
+			Messages: conversations[page-1],
 			Query:    request.Query,
 			From:     from,
 			To:       to,
