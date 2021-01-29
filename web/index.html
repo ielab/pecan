@@ -20,32 +20,29 @@
             <label class="full"><input type="search" placeholder="Search for messages" name="q" value="{{ .Query }}"></label>
             <label><input type="date" value="{{ .From }}" name="from"></label>
             <label><input type="date" value="{{ .To }}" name="to"></label>
-            <input type="hidden" name="page" value="{{ .Page }}">
             <input type="hidden" name="start" value="0">
             <label><input type="submit" value="Search"></label>
         </fieldset>
     </form>
-    <div class="pagination">
-        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .PrevPage }}&start=0">&laquo;</a>
-        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .Page }}&start=0">{{ .Page }}</a>
-        <a href="/?q={{ .Query }}&from={{ .From }}&to={{ .To }}&page={{ .NextPage }}&start=0">&raquo;</a>
-    </div>
     <hr/>
     <article class="card flex two">
         <img src="/static/logo.png" class="profile" style="width: 64px">
         {{ if eq .Type 0 }}
             <h2 style="font-family: monospace;">Here are some recent messages:</h2>
         {{ else }}
-            {{ if .Messages }}
-                <h2 style="font-family: monospace;">Bzzrt! I found {{ len .Messages }} results:</h2>
+            {{ if .Conversations }}
+                <h2 style="font-family: monospace;">Bzzrt! I found {{ len .Conversations }} conversations:</h2>
             {{ else }}
-                <h2 style="font-family: monospace;">Urp! I didn't find any results.</h2>
+                <h2 style="font-family: monospace;">Urp! I didn't find any conversations.</h2>
             {{ end }}
         {{ end }}
     </article>
     <div class="flex one">
-        {{ range .Messages }}
-            <article class="card">
+        {{ range $Conversation := .Conversations }}
+            <article class="card" style="border: 3px solid black">
+                <h2 style="font-family: monospace;margin-left: 10px">There are {{ len $Conversation }} messages in this conversation:</h2>
+                <hr style="border: dashed black">
+                {{ range $Message := $Conversation }}
                 {{ if eq .SubType "message_deleted" }}
                     {{ if .PreviousMessage }}
                         <header>
@@ -82,12 +79,14 @@
                         <div>[can't see response]</div>
                     {{ end }}
                 {{ else }}
-                    <header>
+                    <header style="font-size: 14px">
                         <b>{{ .User }}</b>
                         <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
                     </header>
-                    <footer>{{ .Text }}</footer>
+                    <footer style="font-size: 14px">{{ .Text }}</footer>
+                    <hr>
                 {{ end }}
+                {{end}}
             </article>
         {{ end }}
     </div>

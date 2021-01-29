@@ -20,15 +20,13 @@ type SearchResponse struct {
 	Messages []Message
 	Date     string
 
-	Query    string
-	From     string
-	To       string
-	Next     int
-	Prev     int
-	Took     time.Duration
-	Page     int
-	PrevPage int
-	NextPage int
+	Query         string
+	From          string
+	To            string
+	Next          int
+	Prev          int
+	Took          time.Duration
+	Conversations [][]Message
 }
 
 type SearchRequest struct {

@@ -186,14 +186,11 @@ func main() {
 		// Build the response.
 		response := slackarchive.SearchResponse{
 			Type:     responseType,
-			Messages: conversations[page-1],
+			Conversations: conversations,
 			Query:    request.Query,
 			From:     from,
 			To:       to,
 			Next: next,
-			Page: page,
-			PrevPage: prevpage,
-			NextPage: nextpage,
 			Prev: prev,
 		}
 		c.HTML(http.StatusOK, "index.html", response)
