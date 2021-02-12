@@ -336,6 +336,12 @@ func mergeConversations(conversations [][]Message)(mergedConversations [][]Messa
 				for j := range conversations[i] {
 					if conversations[i][j].Timestamp < mergedConversations[index][len(mergedConversations[index])-1].Timestamp{
 						mergedConversations[index] = append(mergedConversations[index],conversations[i][j])
+					}else if conversations[i][j].Score>0{
+						for k := range mergedConversations[index]{
+							if mergedConversations[index][k].Timestamp == conversations[i][j].Timestamp && mergedConversations[index][k].Text==conversations[i][j].Text{
+								mergedConversations[index][k] = conversations[i][j]
+							}
+						}
 					}
 				}
 			}else{
@@ -367,7 +373,7 @@ func (sbs sortByScore) Swap(i,j int){
 }
 
 func (sbs sortByScore) Less(i,j int) bool {
-	return sbs.scores[i] < sbs.scores[j]
+	return sbs.scores[j] < sbs.scores[i]
 }
 
 func rankConversations(conversations [][]Message)(rankedConversations [][]Message){

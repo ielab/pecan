@@ -37,10 +37,15 @@
             {{ end }}
         {{ end }}
     </article>
+    {{ $Type := .Type }}
     <div class="flex one">
         {{ range $Conversation := .Conversations }}
             <article class="card" style="border: 3px solid black">
-                <h2 style="font-family: monospace;margin-left: 10px">There are {{ len $Conversation }} messages in this conversation:</h2>
+                {{ if eq $Type 0 }}
+                    <h2 style="font-family: monospace;margin-left: 10px">There are {{ len $Conversation }} recent messages:</h2>
+                {{ else }}
+                    <h2 style="font-family: monospace;margin-left: 10px">There are {{ len $Conversation }} messages in this conversation:</h2>
+                {{ end }}
                 <hr style="border: dashed black">
                 {{ range $Message := $Conversation }}
                 {{ if eq .SubType "message_deleted" }}
