@@ -36,6 +36,7 @@ type Config struct {
 		DevGetMessages       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error)
 		DevGetRecentMessages func(es *elastic.Client, ctx context.Context, channels []string) ([]Message, error)
 		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]Message, error)
+		DevGetMoreMessages	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error)
 	}
 }
 
@@ -62,6 +63,7 @@ func NewConfig(path string) (*Config, error) {
 		config.DevEnvironment.DevGetMessages = getMessagesDev
 		config.DevEnvironment.DevGetRecentMessages = getRecentMessagesDev
 		config.DevEnvironment.DevGetConversations = getConversationsDev
+		config.DevEnvironment.DevGetMoreMessages = getMoreMessagesDev
 	}
 
 	return &config, nil

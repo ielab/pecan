@@ -274,6 +274,7 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	return conv
 }
 
+
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
 // and then retrieves messages from these channels using a search request.
 func GetMessages(es *elastic.Client, api *slack.Client, ctx context.Context, accessToken string, request SearchRequest) ([]Message, error) {
@@ -324,6 +325,37 @@ func getMessagesDev(es *elastic.Client, ctx context.Context, channels []string, 
 		return nil, err
 	}
 	return searchResponseToMessages(resp)
+}
+
+// getMoreMessagesDev retrieves extra messages if required by the user
+func getMoreMessagesDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message,error){
+	var result []Message
+	var searchresult *elastic.SearchResult
+	var err error
+	limit := 60
+	t, err := strconv.ParseFloat(request.BaseMessageTime, 64)
+	if request.PrevNext==0{
+		for len(result) <= 6 && float64(limit) < t-float64(request.From.Unix()) {
+			searchresult, err = es.Search("slack-archive").
+				Query(elastic.NewBoolQuery().Must(
+					elastic.NewRangeQuery("ts").Gte(int64(t-float64(limit))).Lte(int64(t)),
+					elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+				Size(SearchSize).
+				Sort("ts", false).
+				Do(ctx)
+			result, err = searchResponseToMessages(searchresult)
+			limit = limit * 2
+			var temp []Message
+			for i := range result {
+				if result[i].Text != "" {
+					temp = append(temp, result[i])
+				}
+			}
+			result = temp
+		}
+	}
+
+	return result,err
 }
 
 func mergeConversations(conversations [][]Message)(mergedConversations [][]Message){

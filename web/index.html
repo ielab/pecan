@@ -24,7 +24,7 @@
             <label><input type="submit" value="Search"></label>
         </fieldset>
     </form>
-    <hr/>
+    <hr>
     <article class="card flex two">
         <img src="/static/logo.png" class="profile" style="width: 64px">
         {{ if eq .Type 0 }}
@@ -38,6 +38,8 @@
         {{ end }}
     </article>
     {{ $Type := .Type }}
+    {{ $From := .From }}
+    {{ $To := .To }}
     <div class="flex one">
         {{ range $Conversation := .Conversations }}
             <article class="card" style="border: 3px solid black">
@@ -47,6 +49,14 @@
                     <h2 style="font-family: monospace;margin-left: 10px">There are {{ len $Conversation }} messages in this conversation:</h2>
                 {{ end }}
                 <hr style="border: dashed black">
+                <form method="post" action="/more_messages" target="_blank">
+                    <input type="hidden" name="prev_next" value="0">
+                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation 0).Timestamp }}">
+                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation 0).Channel }}">
+                    <input type="hidden" value="{{ $From }}" name="from">
+                    <input type="hidden" value="{{ $To }}" name="to">
+                    <button type="submit">More Messages</button>
+                </form>
                 {{ range $Message := $Conversation }}
                 {{ if eq .SubType "message_deleted" }}
                     {{ if .PreviousMessage }}
@@ -92,6 +102,10 @@
                     <hr>
                 {{ end }}
                 {{end}}
+                <form method="post" action="/more_messages" target="_blank">
+                    <input type="hidden" name="prev_next" value="1">
+                    <button type="submit">More Messages</button>
+                </form>
             </article>
         {{ end }}
     </div>

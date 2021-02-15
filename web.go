@@ -27,6 +27,7 @@ type SearchResponse struct {
 	Prev          int
 	Took          time.Duration
 	Conversations [][]Message
+	PrevNext      int
 }
 
 type SearchRequest struct {
@@ -38,4 +39,8 @@ type SearchRequest struct {
 	Next  int `form:"next"`
 	Prev  int `form:"prev"`
 	Page  int `form:"page"`
+
+	PrevNext int `form:"prev_next"`
+	BaseMessageTime string `form:"base_message_time"`
+	BaseMessageChannel string `form:"base_message_channel"`
 }

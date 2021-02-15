@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 )
 func randState() string {
 	b := make([]byte, 32)
@@ -23,6 +24,7 @@ func randState() string {
 }
 
 func main() {
+
 	config, err := slackarchive.NewConfig("config.sample.json")
 	if err != nil {
 		panic(err)
@@ -86,7 +88,7 @@ func main() {
 			token := session.Get("token").(string)
 			accessToken = tokens[token]
 		}
-		page := 1
+
 		// Default time values.
 		from := "2010-01-01"
 		to := time.Now().Format("2006-01-02")
@@ -106,43 +108,12 @@ func main() {
 			if config.Options.DevEnvironment {
 				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
 				conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
-
-				/* clustering part, ignore it fo now
-				if len(conversations)>0 {
-					i := request.Page - 1
-					var cluster []slack.Message
-					var arg string
-					arg = ""
-					for j := range conversations[i] {
-						arg = arg + conversations[i][j].Text + "§"
-					}
-					cmd := exec.Command("python", "./python/cluster.py", arg, matches[i].Text)
-
-					var out []byte
-					out, err = cmd.CombinedOutput()
-
-					reg := regexp.MustCompile("\r\n")
-					indices := reg.Split(string(out), -1)
-					for j := range indices {
-						if indices[j] != "" {
-							var index int64
-							index, err = strconv.ParseInt(indices[j], 10, 64)
-							if err != nil {
-								panic(err)
-							}
-							cluster = append(cluster, conversations[i][index])
-						}
-					}
-					messages = cluster
-				}*/
-
 			} else {
 				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
 				if err != nil {
 					panic(err)
 				}
 			}
-			page=request.Page
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
 		} else {
@@ -167,15 +138,8 @@ func main() {
 		// Compute next and previous scrolls.
 		next := request.Start + slackarchive.SearchSize
 		prev := request.Start - slackarchive.SearchSize
-		prevpage := page-1
-		nextpage := page+1
-		if prevpage==0{
-			prevpage=1
-		}
 
-		if nextpage>len(conversations){
-			nextpage = len(conversations)
-		}
+
 		if next >= len(messages) {
 			next = -1
 		}
@@ -194,6 +158,27 @@ func main() {
 			Prev: prev,
 		}
 		c.HTML(http.StatusOK, "index.html", response)
+		return
+	})
+	router.POST("/more_messages", func(c *gin.Context) {
+		var (
+			request      slackarchive.SearchRequest
+			messages     []slackarchive.Message
+
+		)
+		if err := c.ShouldBind(&request); err == nil {
+			if config.Options.DevEnvironment {
+				var channel []string
+				channel = append(channel,request.BaseMessageChannel)
+				messages, err = config.DevEnvironment.DevGetMoreMessages(es, ctx, channel, request)
+			}
+
+		}
+		response := slackarchive.SearchResponse{
+			Messages:     messages,
+			PrevNext:	  request.PrevNext,
+		}
+		c.HTML(http.StatusOK, "more_messages.html", response)
 		return
 	})
 	router.GET("/login", func(c *gin.Context) {
