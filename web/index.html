@@ -104,6 +104,10 @@
                 {{end}}
                 <form method="post" action="/more_messages" target="_blank">
                     <input type="hidden" name="prev_next" value="1">
+                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation (add (len $Conversation) -1)).Timestamp }}">
+                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation (add (len $Conversation) -1)).Channel }}">
+                    <input type="hidden" value="{{ $From }}" name="from">
+                    <input type="hidden" value="{{ $To }}" name="to">
                     <button type="submit">More Messages</button>
                 </form>
             </article>

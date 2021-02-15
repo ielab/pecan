@@ -10,12 +10,12 @@ import (
 	"github.com/ielab/slackarchive"
 	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
+	"html/template"
 	"log"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
-
 )
 func randState() string {
 	b := make([]byte, 32)
@@ -42,8 +42,12 @@ func main() {
 	tokens := make(map[string]string)
 
 	router := gin.Default()
+	router.SetFuncMap(template.FuncMap{"add": func(a, b int) int {
+		return a + b
+	}})
 	router.LoadHTMLGlob("./web/*.html")
 	router.Static("/static/", "./web/static")
+
 
 	// Middleware for redirecting for authentication.
 	if !config.Options.DevEnvironment { // Bypass this if we are in the dev environment.
@@ -177,6 +181,8 @@ func main() {
 		response := slackarchive.SearchResponse{
 			Messages:     messages,
 			PrevNext:	  request.PrevNext,
+			From:     request.From.Format(slackarchive.DateFormat),
+			To:       request.To.Format(slackarchive.DateFormat),
 		}
 		c.HTML(http.StatusOK, "more_messages.html", response)
 		return

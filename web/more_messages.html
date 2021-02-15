@@ -19,6 +19,16 @@
         <article class="card" style="border: 3px solid black">
             <h2 style="font-family: monospace;margin-left: 10px">Here are {{ len .Messages }} more messages:</h2>
         <hr style="border: dashed black">
+            {{ if eq .PrevNext 0 }}
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="0">
+                <input type="hidden" name="base_message_time" value="{{ (index .Messages 0).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index .Messages 0).Channel }}">
+                <input type="hidden" value="{{ .From }}" name="from">
+                <input type="hidden" value="{{ .To }}" name="to">
+                <button type="submit">More Messages</button>
+            </form>
+            {{ end }}
         {{ range $Message := .Messages }}
         {{ if eq .SubType "message_deleted" }}
         {{ if .PreviousMessage }}
@@ -64,6 +74,16 @@
         <hr>
         {{ end }}
         {{end}}
+            {{ if eq .PrevNext 1 }}
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="1">
+                <input type="hidden" name="base_message_time" value="{{ (index .Messages (add (len .Messages) -1)).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index .Messages (add (len .Messages) -1)).Channel }}">
+                <input type="hidden" value="{{ .From }}" name="from">
+                <input type="hidden" value="{{ .To }}" name="to">
+                <button type="submit">More Messages</button>
+            </form>
+            {{ end }}
     </article>
     </div>
 </main>

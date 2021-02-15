@@ -3,6 +3,7 @@ package slackarchive
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
 	"sort"
@@ -334,7 +335,9 @@ func getMoreMessagesDev(es *elastic.Client, ctx context.Context, channels []stri
 	var err error
 	limit := 60
 	t, err := strconv.ParseFloat(request.BaseMessageTime, 64)
-	if request.PrevNext==0{
+	from := float64(request.From.Unix())
+	fmt.Println(from)
+	if request.PrevNext==1{
 		for len(result) <= 6 && float64(limit) < t-float64(request.From.Unix()) {
 			searchresult, err = es.Search("slack-archive").
 				Query(elastic.NewBoolQuery().Must(
@@ -353,8 +356,43 @@ func getMoreMessagesDev(es *elastic.Client, ctx context.Context, channels []stri
 			}
 			result = temp
 		}
+		if len(result)>6 {
+			result = result[1:6]
+		}else{
+			result = result[1:]
+		}
+	}else if request.PrevNext==0{
+		for len(result) <= 6 && float64(limit) < float64(request.To.Unix()) - t {
+			searchresult, err = es.Search("slack-archive").
+				Query(elastic.NewBoolQuery().Must(
+					elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t+float64(limit))),
+					elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+				Size(SearchSize).
+				Sort("ts", true).
+				Do(ctx)
+			result, err = searchResponseToMessages(searchresult)
+			limit = limit * 2
+			var temp []Message
+			for i := range result {
+				if result[i].Text != "" {
+					temp = append(temp, result[i])
+				}
+			}
+			result = temp
+		}
+		if len(result)>6 {
+			result = result[1:6]
+		}else{
+			result = result[1:]
+		}
+		i := 0
+		j := len(result) - 1
+		for i < j {
+			result[i], result[j] = result[j], result[i]
+			i++
+			j--
+		}
 	}
-
 	return result,err
 }
 
