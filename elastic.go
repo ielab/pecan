@@ -3,7 +3,6 @@ package slackarchive
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
 	"sort"
@@ -203,6 +202,77 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 		Sort("ts", false).
 		Do(ctx)
 }
+func queryConversation2(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
+	var err error
+	var left *elastic.SearchResult
+	var right *elastic.SearchResult
+	var leftMessages []Message
+	var rightMessages []Message
+	leftSearchSize := 6
+	rightSearchSize := 6
+	var t float64
+	t, err = strconv.ParseFloat(TimeStamp, 64)
+	for len(leftMessages) < 6 && leftSearchSize < 1000{
+		left, err = es.Search("slack-archive").
+			Query(elastic.NewBoolQuery().Must(
+				elastic.NewRangeQuery("ts").Gte(request.From.Unix()).Lte(int64(t)),
+				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+			Size(leftSearchSize).
+			Sort("ts", false).
+			Do(ctx)
+		leftMessages, err = searchResponseToMessages(left)
+		if err != nil {
+			panic(err)
+		}
+		var temp []Message
+		for i := range leftMessages {
+			if leftMessages[i].Text != "" {
+				temp = append(temp, leftMessages[i])
+			}
+		}
+		leftMessages = temp
+		leftSearchSize *= 2
+	}
+	if len(leftMessages)>6{
+		leftMessages = leftMessages[:6]
+	}
+	leftMessages[0].Score=message.Score
+	for len(rightMessages) < 6 && rightSearchSize < 1000{
+		right, err = es.Search("slack-archive").
+			Query(elastic.NewBoolQuery().Must(
+				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(request.To.Unix()),
+				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+			Size(rightSearchSize).
+			Sort("ts", true).
+			Do(ctx)
+		rightMessages, err = searchResponseToMessages(right)
+		if err != nil {
+			panic(err)
+		}
+		var temp []Message
+		for i := range rightMessages {
+			if rightMessages[i].Text != "" {
+				temp = append(temp, rightMessages[i])
+			}
+		}
+		rightMessages = temp
+		rightSearchSize *= 2
+	}
+	if len(rightMessages)>6{
+		rightMessages=rightMessages[1:6]
+	}else{
+		rightMessages=rightMessages[1:]
+	}
+	i := 0
+	j := len(rightMessages) - 1
+	for i < j {
+		rightMessages[i], rightMessages[j] = rightMessages[j], rightMessages[i]
+		i++
+		j--
+	}
+	conv := append(rightMessages,leftMessages...)
+	return conv
+}
 
 //query a conversation using a message
 func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
@@ -335,8 +405,6 @@ func getMoreMessagesDev(es *elastic.Client, ctx context.Context, channels []stri
 	var err error
 	limit := 60
 	t, err := strconv.ParseFloat(request.BaseMessageTime, 64)
-	from := float64(request.From.Unix())
-	fmt.Println(from)
 	if request.PrevNext==1{
 		for len(result) <= 6 && float64(limit) < t-float64(request.From.Unix()) {
 			searchresult, err = es.Search("slack-archive").
@@ -474,7 +542,8 @@ func getConversationsDev(es *elastic.Client, ctx context.Context, channels []str
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel, messages[i].Channel)
-		conversation := queryConversation(es, ctx, convChannel, t, request,messages[i])
+		//conversation := (es, ctx, convChannel, t, request,messages[i])
+		conversation := queryConversation2(es, ctx, convChannel, t, request,messages[i])
 		conversations = append(conversations, conversation)
 	}
 	return rankConversations(mergeConversations(conversations)), err
