@@ -202,66 +202,38 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 		Sort("ts", false).
 		Do(ctx)
 }
-func queryConversation2(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
+func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
 	var err error
 	var left *elastic.SearchResult
 	var right *elastic.SearchResult
 	var leftMessages []Message
 	var rightMessages []Message
-	leftSearchSize := 6
-	rightSearchSize := 6
 	var t float64
 	t, err = strconv.ParseFloat(TimeStamp, 64)
-	for len(leftMessages) < 6 && leftSearchSize < 1000{
-		left, err = es.Search("slack-archive").
-			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(request.From.Unix()).Lte(int64(t)),
-				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-			Size(leftSearchSize).
-			Sort("ts", false).
-			Do(ctx)
-		leftMessages, err = searchResponseToMessages(left)
-		if err != nil {
-			panic(err)
-		}
-		var temp []Message
-		for i := range leftMessages {
-			if leftMessages[i].Text != "" {
-				temp = append(temp, leftMessages[i])
-			}
-		}
-		leftMessages = temp
-		leftSearchSize *= 2
-	}
-	if len(leftMessages)>6{
-		leftMessages = leftMessages[:6]
+
+	left, err = es.Search("slack-archive").
+		Query(elastic.NewBoolQuery().Must(
+			elastic.NewRangeQuery("ts").Gte(request.From.Unix()).Lte(int64(t)),
+			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+		Size(6).
+		Sort("ts", false).
+		Do(ctx)
+	leftMessages, err = searchResponseToMessages(left)
+	if err != nil {
+		panic(err)
 	}
 	leftMessages[0].Score=message.Score
-	for len(rightMessages) < 6 && rightSearchSize < 1000{
-		right, err = es.Search("slack-archive").
-			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(request.To.Unix()),
-				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-			Size(rightSearchSize).
-			Sort("ts", true).
-			Do(ctx)
-		rightMessages, err = searchResponseToMessages(right)
-		if err != nil {
-			panic(err)
-		}
-		var temp []Message
-		for i := range rightMessages {
-			if rightMessages[i].Text != "" {
-				temp = append(temp, rightMessages[i])
-			}
-		}
-		rightMessages = temp
-		rightSearchSize *= 2
-	}
-	if len(rightMessages)>6{
-		rightMessages=rightMessages[1:6]
-	}else{
-		rightMessages=rightMessages[1:]
+
+	right, err = es.Search("slack-archive").
+		Query(elastic.NewBoolQuery().Must(
+			elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(request.To.Unix()),
+			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
+		Size(6).
+		Sort("ts", true).
+		Do(ctx)
+	rightMessages, err = searchResponseToMessages(right)
+	if err != nil {
+		panic(err)
 	}
 	i := 0
 	j := len(rightMessages) - 1
@@ -270,80 +242,11 @@ func queryConversation2(es *elastic.Client, ctx context.Context, channels []stri
 		i++
 		j--
 	}
-	conv := append(rightMessages,leftMessages...)
+	conv := append(rightMessages[:len(rightMessages)-1],leftMessages...)
 	return conv
 }
 
-//query a conversation using a message
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
-	var t float64
-	var err error
-	var result *elastic.SearchResult
-	var left []Message
-	var right []Message
-	t, err = strconv.ParseFloat(TimeStamp, 64)
 
-	if err != nil {
-		panic(err)
-	}
-	lower := 60
-	upper := 60
-	for len(left) <= 6 && float64(lower) < t-float64(request.From.Unix()) {
-		result, err = es.Search("slack-archive").
-			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(int64(t-float64(lower))).Lte(int64(t)),
-				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-			Size(SearchSize).
-			Sort("ts", false).
-			Do(ctx)
-		left, err = searchResponseToMessages(result)
-		lower = lower * 2
-		var temp []Message
-		for i := range left {
-			if left[i].Text != "" {
-				temp = append(temp, left[i])
-			}
-		}
-		left = temp
-	}
-	var leftMessages []Message
-	if len(left)>=6 {
-		leftMessages = left[:6]
-	}else{
-		leftMessages = left[:len(left)]
-	}
-	leftMessages[0].Score = message.Score
-	for len(right) <= 6 && float64(upper) < float64(request.To.Unix())-t {
-		result, err = es.Search("slack-archive").
-			Query(elastic.NewBoolQuery().Must(
-				elastic.NewRangeQuery("ts").Gte(int64(t)).Lte(int64(t+float64(upper))),
-				elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-			Size(SearchSize).
-			Sort("ts", true).
-			Do(ctx)
-		right, err = searchResponseToMessages(result)
-		upper = upper * 2
-		var temp []Message
-		for i := range right {
-			if right[i].Text != "" {
-				temp = append(temp, right[i])
-			}
-		}
-		right = temp
-	}
-	var rightMessages []Message
-	if len(right)>=6{
-		for i := 5 ;i>0;i--{
-			rightMessages = append(rightMessages,right[i])
-		}
-	}else{
-		for i := len(right)-1;i>0;i--{
-			rightMessages = append(rightMessages,right[i])
-		}
-	}
-	conv := append(rightMessages,leftMessages...)
-	return conv
-}
 
 
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
@@ -542,8 +445,7 @@ func getConversationsDev(es *elastic.Client, ctx context.Context, channels []str
 		)
 		t = messages[i].Timestamp
 		convChannel = append(convChannel, messages[i].Channel)
-		//conversation := (es, ctx, convChannel, t, request,messages[i])
-		conversation := queryConversation2(es, ctx, convChannel, t, request,messages[i])
+		conversation := queryConversation(es, ctx, convChannel, t, request,messages[i])
 		conversations = append(conversations, conversation)
 	}
 	return rankConversations(mergeConversations(conversations)), err
