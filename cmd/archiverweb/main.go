@@ -164,6 +164,7 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", response)
 		return
 	})
+	//Page when the user requires to view extra messages
 	router.POST("/more_messages", func(c *gin.Context) {
 		var (
 			request      slackarchive.SearchRequest

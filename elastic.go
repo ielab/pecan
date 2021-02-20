@@ -202,6 +202,8 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 		Sort("ts", false).
 		Do(ctx)
 }
+
+// queryConversation retrieves messages in a conversation based on original messages
 func queryConversation(es *elastic.Client, ctx context.Context, channels []string, TimeStamp string, request SearchRequest, message Message) []Message {
 	var err error
 	var left *elastic.SearchResult
@@ -367,6 +369,8 @@ func getMoreMessagesDev(es *elastic.Client, ctx context.Context, channels []stri
 	return result,err
 }
 
+// mergeConversations merge conversations that are overlapping with each other.
+//At the same time, save the messages with positive scores to the merged conversation
 func mergeConversations(conversations [][]Message)(mergedConversations [][]Message){
 
 	mergedConversations = make([][]Message,0)
@@ -417,6 +421,7 @@ func (sbs sortByScore) Less(i,j int) bool {
 	return sbs.scores[j] < sbs.scores[i]
 }
 
+//rankConversations rank conversations based on sum of scores.
 func rankConversations(conversations [][]Message)(rankedConversations [][]Message){
 	scores := make([]float64,len(conversations))
 	for i:=range conversations{
@@ -431,7 +436,7 @@ func rankConversations(conversations [][]Message)(rankedConversations [][]Messag
 	sort.Sort(sortByScore(combination))
 	return combination.conversations
 }
-// retrieves conversations
+//getConversationsDev retrieves conversations based on the retrieved messages
 func getConversationsDev(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]Message, error) {
 	resp, err := queryMessages(es, ctx, channels, request)
 	var messages []Message
