@@ -381,6 +381,9 @@ func mergeConversations(conversations []Conversation) (mergedConversations []Con
 	mergedConversations = make([]Conversation, 0)
 	channelIndex := make(map[string]int)
 	for i := range conversations {
+		if len(conversations[i]) == 0 {
+			continue
+		}
 		if index, ok := channelIndex[conversations[i][0].Channel]; ok {
 			if conversations[i][0].Timestamp >= mergedConversations[index][len(mergedConversations[index])-1].Timestamp {
 				for j := range conversations[i] {
