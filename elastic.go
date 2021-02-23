@@ -185,7 +185,9 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	if err != nil {
 		return nil, err
 	}
-	leftMessages[0].Score = message.Score
+	if len(leftMessages) > 0 {
+		leftMessages[0].Score = message.Score
+	}
 
 	right, err := es.Search("slack-archive").
 		Query(elastic.NewBoolQuery().Must(
