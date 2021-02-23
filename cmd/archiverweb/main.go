@@ -84,6 +84,26 @@ func main() {
 
 	router.GET("/", func(c *gin.Context) {
 
+		// Default time values.
+		from := "2010-01-01"
+		to := time.Now().Format("2006-01-02")
+
+		result, err := es.Count("slack-archive").Do(ctx)
+		if err != nil {
+			panic(err)
+		}
+		// Build the response.
+		response := slackarchive.StatisticsResponse{
+			From:        from,
+			To:          to,
+			NumMessages: result,
+		}
+		c.HTML(http.StatusOK, "index.html", response)
+		return
+	})
+
+	router.GET("/search", func(c *gin.Context) {
+
 		// If production environment, get the access token of the user.
 		var accessToken string
 		if !config.Options.DevEnvironment {
@@ -99,14 +119,11 @@ func main() {
 
 		var (
 			request       slackarchive.SearchRequest
-			responseType  slackarchive.SearchResponseType
 			conversations []slackarchive.Conversation
 		)
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.
 		if err := c.ShouldBind(&request); err == nil && len(request.Query) > 0 {
-			responseType = slackarchive.SEARCH
-
 			// Determine which method should be used to search.
 			if config.Options.DevEnvironment {
 				conversations, err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
@@ -121,19 +138,6 @@ func main() {
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
 
-		} else {
-			responseType = slackarchive.RECENT
-
-			// Determine which method should be used for recent messages.
-			if config.Options.DevEnvironment {
-				conversations, err = config.DevEnvironment.DevGetRecentConversations(es, ctx, config.Options.DevChannels)
-			} else {
-				conversations, err = slackarchive.GetRecentConversations(es, api, ctx, accessToken)
-			}
-
-			if err != nil {
-				panic(err)
-			}
 		}
 
 		// Compute next and previous scrolls.
@@ -149,7 +153,6 @@ func main() {
 
 		// Build the response.
 		response := slackarchive.SearchResponse{
-			Type:          responseType,
 			Conversations: conversations,
 			Query:         request.Query,
 			From:          from,
@@ -157,7 +160,7 @@ func main() {
 			Next:          next,
 			Prev:          prev,
 		}
-		c.HTML(http.StatusOK, "index.html", response)
+		c.HTML(http.StatusOK, "search.html", response)
 		return
 	})
 	//Page when the user requires to view extra messages
@@ -167,9 +170,9 @@ func main() {
 			messages []slackarchive.Message
 		)
 		if err := c.ShouldBind(&request); err == nil {
-				var channel []string
-				channel = append(channel, request.BaseMessageChannel)
-				messages, err = slackarchive.MoreMessages(es, ctx, channel, request)
+			var channel []string
+			channel = append(channel, request.BaseMessageChannel)
+			messages, err = slackarchive.MoreMessages(es, ctx, channel, request)
 		}
 		response := slackarchive.SearchResponse{
 			Messages: messages,

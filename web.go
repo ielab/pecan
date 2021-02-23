@@ -29,6 +29,12 @@ type SearchResponse struct {
 	PrevNext      int
 }
 
+type StatisticsResponse struct {
+	NumMessages int64
+	From        string
+	To          string
+}
+
 type SearchRequest struct {
 	Query string    `form:"q"`
 	From  time.Time `form:"from" time_format:"2006-01-02"`
