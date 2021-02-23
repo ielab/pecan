@@ -52,7 +52,7 @@
                     {{ if eq .SubType "message_deleted" }}
                         {{ if .PreviousMessage }}
                             <header>
-                                <b>{{ .PreviousMessage.User }}</b>
+                                <b>{{ $Message.PreviousMessage.User }}</b>
                                 <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
                             </header>
                             <footer>
@@ -65,7 +65,7 @@
                             <footer>[message deleted]</footer>
                         {{ end }}
                     {{ else if eq .SubType "message_replied" }}
-                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ .User }}</span> {{ .Text }}</small>
+                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
                         {{ if .SubMessage }}
                             <blockquote>
                                 <ul>
@@ -81,7 +81,7 @@
                             <div>[can't see response]</div>
                         {{ end }}
                     {{ else }}
-                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ .User }}</span> {{ .Text }}</small>
+                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
                         <hr>
                     {{ end }}
                 {{end}}
