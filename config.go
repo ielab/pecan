@@ -33,10 +33,8 @@ type Config struct {
 		DevChannels    []string `json:"dev_channels"`
 	}
 	DevEnvironment struct {
-		DevGetMessages       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error)
-		DevGetRecentMessages func(es *elastic.Client, ctx context.Context, channels []string) ([]Message, error)
-		DevGetConversations	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([][]Message, error)
-		DevGetMoreMessages	func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error)
+		DevGetConversations       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Conversation, error)
+		DevGetRecentConversations func(es *elastic.Client, ctx context.Context, channels []string) ([]Conversation, error)
 	}
 }
 
@@ -60,10 +58,8 @@ func NewConfig(path string) (*Config, error) {
 	// Doing this allows the main method to access these otherwise
 	// private methods that should only be used in a dev setting.
 	if config.Options.DevEnvironment {
-		config.DevEnvironment.DevGetMessages = getMessagesDev
-		config.DevEnvironment.DevGetRecentMessages = getRecentMessagesDev
 		config.DevEnvironment.DevGetConversations = getConversationsDev
-		config.DevEnvironment.DevGetMoreMessages = getMoreMessagesDev
+		config.DevEnvironment.DevGetRecentConversations = getRecentConversationsDev
 	}
 
 	return &config, nil

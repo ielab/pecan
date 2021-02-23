@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 )
+
 func randState() string {
 	b := make([]byte, 32)
 	rand.Read(b)
@@ -25,7 +26,7 @@ func randState() string {
 
 func main() {
 
-	config, err := slackarchive.NewConfig("config.sample.json")
+	config, err := slackarchive.NewConfig("config.json")
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +35,7 @@ func main() {
 
 	ctx := context.Background()
 
-	es, err := elastic.NewClient(elastic.SetURL(config.Elasticsearch.Url),elastic.SetSniff(false))
+	es, err := elastic.NewClient(elastic.SetURL(config.Elasticsearch.Url), elastic.SetSniff(false))
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +48,6 @@ func main() {
 	}})
 	router.LoadHTMLGlob("./web/*.html")
 	router.Static("/static/", "./web/static")
-
 
 	// Middleware for redirecting for authentication.
 	if !config.Options.DevEnvironment { // Bypass this if we are in the dev environment.
@@ -98,10 +98,9 @@ func main() {
 		to := time.Now().Format("2006-01-02")
 
 		var (
-			request      slackarchive.SearchRequest
-			messages     []slackarchive.Message
-			responseType slackarchive.SearchResponseType
-			conversations [][]slackarchive.Message
+			request       slackarchive.SearchRequest
+			responseType  slackarchive.SearchResponseType
+			conversations []slackarchive.Conversation
 		)
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.
@@ -110,41 +109,38 @@ func main() {
 
 			// Determine which method should be used to search.
 			if config.Options.DevEnvironment {
-				messages, err = config.DevEnvironment.DevGetMessages(es, ctx, config.Options.DevChannels, request)
-				conversations ,err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
+				conversations, err = config.DevEnvironment.DevGetConversations(es, ctx, config.Options.DevChannels, request)
 			} else {
-				messages, err = slackarchive.GetMessages(es, api, ctx, accessToken, request)
-				if err != nil {
-					panic(err)
-				}
+				conversations, err = slackarchive.GetConversations(es, api, ctx, accessToken, request)
 			}
+
+			if err != nil {
+				panic(err)
+			}
+
 			from = request.From.Format(slackarchive.DateFormat)
 			to = request.To.Format(slackarchive.DateFormat)
+
 		} else {
 			responseType = slackarchive.RECENT
 
 			// Determine which method should be used for recent messages.
 			if config.Options.DevEnvironment {
-				messages, err = config.DevEnvironment.DevGetRecentMessages(es, ctx, config.Options.DevChannels)
-				conversations = append(conversations, messages)
-				if err != nil {
-					panic(err)
-				}
+				conversations, err = config.DevEnvironment.DevGetRecentConversations(es, ctx, config.Options.DevChannels)
 			} else {
-				messages, err = slackarchive.GetRecentMessages(es, api, ctx, accessToken)
-				if err != nil {
-					panic(err)
-				}
+				conversations, err = slackarchive.GetRecentConversations(es, api, ctx, accessToken)
 			}
 
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		// Compute next and previous scrolls.
 		next := request.Start + slackarchive.SearchSize
 		prev := request.Start - slackarchive.SearchSize
 
-
-		if next >= len(messages) {
+		if next >= len(conversations) {
 			next = -1
 		}
 		if prev <= slackarchive.SearchSize {
@@ -153,13 +149,13 @@ func main() {
 
 		// Build the response.
 		response := slackarchive.SearchResponse{
-			Type:     responseType,
+			Type:          responseType,
 			Conversations: conversations,
-			Query:    request.Query,
-			From:     from,
-			To:       to,
-			Next: next,
-			Prev: prev,
+			Query:         request.Query,
+			From:          from,
+			To:            to,
+			Next:          next,
+			Prev:          prev,
 		}
 		c.HTML(http.StatusOK, "index.html", response)
 		return
@@ -167,21 +163,17 @@ func main() {
 	//Page when the user requires to view extra messages
 	router.POST("/more_messages", func(c *gin.Context) {
 		var (
-			request      slackarchive.SearchRequest
-			messages     []slackarchive.Message
-
+			request  slackarchive.SearchRequest
+			messages []slackarchive.Message
 		)
 		if err := c.ShouldBind(&request); err == nil {
-			if config.Options.DevEnvironment {
 				var channel []string
-				channel = append(channel,request.BaseMessageChannel)
-				messages, err = config.DevEnvironment.DevGetMoreMessages(es, ctx, channel, request)
-			}
-
+				channel = append(channel, request.BaseMessageChannel)
+				messages, err = slackarchive.MoreMessages(es, ctx, channel, request)
 		}
 		response := slackarchive.SearchResponse{
-			Messages:     messages,
-			PrevNext:	  request.PrevNext,
+			Messages: messages,
+			PrevNext: request.PrevNext,
 			From:     request.From.Format(slackarchive.DateFormat),
 			To:       request.To.Format(slackarchive.DateFormat),
 		}

@@ -10,7 +10,7 @@
 <body>
 <div style="overflow: hidden;height: 64px;"></div>
 <nav>
-    <a href="#" class="brand">
+    <a href="/" class="brand">
         <span>ieab slack archive</span>
     </a>
 </nav>
@@ -18,70 +18,70 @@
     <div class="flex one">
         <article class="card" style="border: 3px solid black">
             <h2 style="font-family: monospace;margin-left: 10px">Here are {{ len .Messages }} more messages:</h2>
-        <hr style="border: dashed black">
-        <form method="post" action="/more_messages">
-            <input type="hidden" name="prev_next" value="0">
-            <input type="hidden" name="base_message_time" value="{{ (index .Messages 0).Timestamp }}">
-            <input type="hidden" name="base_message_channel" value="{{ (index .Messages 0).Channel }}">
-            <input type="hidden" value="{{ .From }}" name="from">
-            <input type="hidden" value="{{ .To }}" name="to">
-            <button type="submit">More Messages</button>
-        </form>
-        {{ range $Message := .Messages }}
-        {{ if eq .SubType "message_deleted" }}
-        {{ if .PreviousMessage }}
-        <header>
-            <b>{{ .PreviousMessage.User }}</b>
-            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-        </header>
-        <footer>
-            <del>{{ .PreviousMessage.Text }}</del>
-        </footer>
-        {{ else }}
-        <header>
-            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-        </header>
-        <footer>[message deleted]</footer>
-        {{ end }}
-        {{ else if eq .SubType "message_replied" }}
-        <header>
-            <b>{{ .User }}</b>
-            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-        </header>
-        <footer>{{ .Text }}</footer>
-        {{ if .SubMessage }}
-        <blockquote>
-            <ul>
-                <li>
-                    <small><b>{{ .SubMessage.User }}</b> {{ .EventTimestamp }}</small>
-                </li>
-                <li>
-                    <small>{{ .SubType }}</small>
-                </li>
-            </ul>
-        </blockquote>
-        {{ else }}
-        <div>[can't see response]</div>
-        {{ end }}
-        {{ else }}
-        <header style="font-size: 14px">
-            <b>{{ .User }}</b>
-            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-        </header>
-        <footer style="font-size: 14px">{{ .Text }}</footer>
-        <hr>
-        {{ end }}
-        {{end}}
-        <form method="post" action="/more_messages">
-            <input type="hidden" name="prev_next" value="1">
-            <input type="hidden" name="base_message_time" value="{{ (index .Messages (add (len .Messages) -1)).Timestamp }}">
-            <input type="hidden" name="base_message_channel" value="{{ (index .Messages (add (len .Messages) -1)).Channel }}">
-            <input type="hidden" value="{{ .From }}" name="from">
-            <input type="hidden" value="{{ .To }}" name="to">
-            <button type="submit">More Messages</button>
-        </form>
+            <hr style="border: dashed black">
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="0">
+                <input type="hidden" name="base_message_time" value="{{ (index .Messages (add (len .Messages) -1)).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index .Messages (add (len .Messages) -1)).Channel }}">
+                <input type="hidden" value="{{ .From }}" name="from">
+                <input type="hidden" value="{{ .To }}" name="to">
+                <button type="submit">Previous Messages</button>
+            </form>
+            {{ range $Message := .Messages }}
+                {{ if eq .SubType "message_deleted" }}
+                    {{ if .PreviousMessage }}
+                        <header>
+                            <b>{{ .PreviousMessage.User }}</b>
+                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                        </header>
+                        <footer>
+                            <del>{{ .PreviousMessage.Text }}</del>
+                        </footer>
+                    {{ else }}
+                        <header>
+                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                        </header>
+                        <footer>[message deleted]</footer>
+                    {{ end }}
+                {{ else if eq .SubType "message_replied" }}
+                    <header>
+                        <b>{{ .User }}</b>
+                        <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                    </header>
+                    <footer>{{ .Text }}</footer>
+                    {{ if .SubMessage }}
+                        <blockquote>
+                            <ul>
+                                <li>
+                                    <small><b>{{ .SubMessage.User }}</b> {{ .EventTimestamp }}</small>
+                                </li>
+                                <li>
+                                    <small>{{ .SubType }}</small>
+                                </li>
+                            </ul>
+                        </blockquote>
+                    {{ else }}
+                        <div>[can't see response]</div>
+                    {{ end }}
+                {{ else }}
+                    <header style="font-size: 14px">
+                        <b>{{ .User }}</b>
+                        <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                    </header>
+                    <footer style="font-size: 14px">{{ .Text }}</footer>
+                    <hr>
+                {{ end }}
+            {{end}}
 
-    </article>
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="1">
+                <input type="hidden" name="base_message_time" value="{{ (index .Messages 0).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index .Messages 0).Channel }}">
+                <input type="hidden" value="{{ .From }}" name="from">
+                <input type="hidden" value="{{ .To }}" name="to">
+                <button type="submit">Later Messages</button>
+            </form>
+        </article>
     </div>
 </main>
 </body>

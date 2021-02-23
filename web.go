@@ -16,17 +16,16 @@ const (
 )
 
 type SearchResponse struct {
-	Type     SearchResponseType
-	Messages []Message
-	Date     string
-
+	Type          SearchResponseType
+	Date          string
 	Query         string
 	From          string
 	To            string
 	Next          int
 	Prev          int
 	Took          time.Duration
-	Conversations [][]Message
+	Messages      []Message
+	Conversations []Conversation
 	PrevNext      int
 }
 
@@ -40,7 +39,7 @@ type SearchRequest struct {
 	Prev  int `form:"prev"`
 	Page  int `form:"page"`
 
-	PrevNext int `form:"prev_next"`
-	BaseMessageTime string `form:"base_message_time"`
+	PrevNext           int    `form:"prev_next"`
+	BaseMessageTime    string `form:"base_message_time"`
 	BaseMessageChannel string `form:"base_message_channel"`
 }
