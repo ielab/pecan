@@ -26,7 +26,7 @@ func randState() string {
 
 func main() {
 
-	config, err := slackarchive.NewConfig("config.json")
+	config, err := slackarchive.NewConfig("config.sample.json")
 	if err != nil {
 		panic(err)
 	}

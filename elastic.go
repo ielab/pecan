@@ -193,7 +193,7 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 		Query(elastic.NewBoolQuery().Must(
 			elastic.NewRangeQuery("ts").Gt(int64(t)),
 			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-		Size(6).
+		Size(5).
 		Sort("ts", true).
 		Do(ctx)
 	if err != nil {
@@ -205,7 +205,7 @@ func queryConversation(es *elastic.Client, ctx context.Context, channels []strin
 	}
 
 	// Reverse the leftMessages slice.
-	for i, j := 0, len(leftMessages)-1; j > 0; i, j = i+1, j-1 {
+	for i, j := 0, len(leftMessages)-1; j > i; i, j = i+1, j-1 {
 		leftMessages[i], leftMessages[j] = leftMessages[j], leftMessages[i]
 	}
 	//return leftMessages, nil
