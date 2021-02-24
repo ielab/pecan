@@ -1,3 +1,16 @@
 \section{Operation of the System}
-
 % What does your demonstration do and how does it work? What does it look like?
+
+•	The system is implemented in Go Language
+
+•	The system is using elastic search as its search engine
+
+•	Elastic search uses BM25 model to score the messages. The score of each conversation is the sum of the scores of its messages. After summing up the scores, conversations are sorted based on their scores using quicksort.
+
+•	The version of elastic search is 7.10.1
+
+•	Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query.
+
+
+•	There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages. After merging conversations, we rank them by the sum of the scores of messages they have using quicksort. Normally, merged conversations are ranked higher than original conversations.
+
