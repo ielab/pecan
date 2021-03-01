@@ -69,7 +69,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{A Platform for Searching Chat Conversations}
+\title{PECAN: A Platform for Searching Chat Conversations}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -155,23 +155,10 @@ A good demonstration submission should be interesting to a SIGIR audience and sh
 
 \section{Problem and Target Users}
 
- - many chat services offered today provide search as a value-add to prompt users to upgrade to paid plans
- 
- - many of these services also offer an API that enables bots to read messages in real-time
- 
- - the search offering provided by these services is often sub-par: they allow only to search for the exact messages one might have in mind, prevent searching through historical chats, ...
- 
- - as search practitioners, we often want to understand how search systems work in order to improve them.
- 
- - to this end, we propose an interface for studying and using \textit{search for conversations}.
- 
- - search for conversations is a task where one wishes to find a conversation they had in the past.
- 
- - Often, chat services provide only search for individual messages: this is not ideal as the messages surrounding a target message often contain context to the information need.
- 
- - An example of this is looking for an answer to a question, but forgetting how the question was posed. To find their answer, one may search for a conversation they knew that happened within the same time period.
- 
- - Our interface targets users of chat services that wish to provide their own search solution, and Information Practitioners that wish to study how users search for conversations.
+Many search offerings of popular chat services offer a sub-par experience. They mostly only allow searching for the exact messages that one might have in mind. Existing message search systems are not ideal, as the messages surrounding a targeted message often contain context to the information need. An example of this is looking for an answer to a question but forgetting how the question was posed. To find their answer, one may search for a conversation they knew that happened within the same time period. Indeed, within the context of chat message search, one is often not interested in individual messages relevant to a search query but a conversation of topically related messages. 
+As search practitioners, we often want to understand how Information Retrieval systems work to improve them. Furthermore, we suggest that existing chat search systems can be drastically improved by addressing the task of `search for conversations'. This new task proposes that search within chat messages should not be restricted to individual messages and that conversations of messages are the ideal unit of retrieval for such data. To this end, we propose \textbf{PECAN}: A \textbf{P}latform for s\textbf{E}arching \textbf{C}h\textbf{A}t co\textbf{N}versations.
+
+Our PECAN system targets teams and organisations of chat services that wish to provide their own search solution and Information Retrieval practitioners that wish to study how users search for conversations and improve the effectiveness of searching for conversation. PECAN provides all of the necessary tools to get started working on this task: a componentised framework to upgrade or implement new features, offline/batch retrieval for evaluation, and user study instrumentation (administration, query logging, interaction logging). 
  
 \input{importance}
 \input{operation}

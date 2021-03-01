@@ -1,1 +1,13 @@
 \section{Importance of System}
+
+To the best of our knowledge, PECAN is the only system currently available to enable research into this new task of `searching for conversations'. There are many facets to this new research task that PECAN can be used for implementing new algorithms:
+
+\begin{description}
+\item[Conversation Aggregations:] The challenge involved here is how to represent the `unit of retrieval'. Two aggregation aspects can be addressed: Message Relevance and Conversation Boundaries. Message Relevance is the task of identifying which messages within a conversation are relevant and possibly discarding irrelevant messages from the presentation of the results. Conversation Boundaries is the task of identifying when a conversation begins and ends and merging retrieved conversations that overlap in time or topic.
+\item[Conversation Scoring:] This is the task of scoring conversations given a query to provide a ranking of conversations in terms of relevance, for example. It is currently an open question for the most effective way to rank conversations and may depend on various factors from typical search scenarios, such as timeliness.
+\item[Query Suggestion:] This is the task of suggesting alternative queries for searching conversations. We hypothesise that most searches for conversations are known-item retrieval (e.g., a user is searching to find an answer to a question they previously had but cannot remember how the question was asked or the answer). This scenario presents itself as a unique opportunity to apply query suggestion to known-item retrieval.
+\item[Conversation Summarisation:] Conversations are rich sources of information that contain the history of questions and answers asked by a team or organisation. However, finding answers to complex questions within conversations can be tedious as one may need to read through many messages to find the answer. This task aims to summarise conversations to provide an answer to a question or a high-level overview of a conversation.
+\item[Related Conversations:] This is the task of identifying similar conversations given a conversation. This task is useful in the case of, for example, showing that a topic of conversation has been discussed previously (i.e., preventing time-wasting, keeping track of important decisions).
+\end{description}
+ 
+ 
