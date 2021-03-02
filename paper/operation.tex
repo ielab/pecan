@@ -1,26 +1,30 @@
+\graphicspath{ {./images/} }
 \section{Operation of the System}
 
 \subsection{Searching for Conversations}
 
 \todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
 
+\includegraphics[scale=0.2]{homepage}
+
+This is the homepage of the system.
+\bigbreak
+
+\includegraphics[scale=0.2]{searching}
+
+Searching for converstaions with query "party".
+\bigbreak
+
+\includegraphics[scale=0.2]{traversing}
+
+Traversing previous or next messages by clicking "previous messages" or "next messages".
+\bigbreak
+
 \subsection{System Implementation}
-
-\todo{2nd priority: for @kq: expand bullet points into paras, general implementation details}
-% What does your demonstration do and how does it work? What does it look like?
-•	The system is implemented in Go Language
-
-•	The system is using elastic search as its search engine
-
-•	Elastic search uses BM25 model to score the messages. The score of each conversation is the sum of the scores of its messages. After summing up the scores, conversations are sorted based on their scores using quicksort.
-
-•	The version of elastic search is 7.10.1
-
-•	Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query.
+In this project, we use Go Language to implement the backend part of the system. We use elastic 7.0 as our serach engine. The elastic search provides a go module so that we can import and use it. The retrieval model we use to score messages is BM25. The score of each conversation is simply the sum of the scores of messages in that conversation. The retrieved conversations are merged and than ranked based on their scores. Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query. After getting all the conversations, users can traversing through messages that come before and after each conversation.
 
 \subsubsection{Conversation Aggregation}
-
-•	There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages. After merging conversations, we rank them by the sum of the scores of messages they have using quicksort. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
+There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages. After merging conversations, we rank them by the sum of the scores of messages they have using quicksort. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
 
 \begin{algorithm}
 	\SetAlgoLined
