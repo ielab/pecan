@@ -1,5 +1,12 @@
 \section{Operation of the System}
 
+\subsection{Searching for Conversations}
+
+\todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
+
+\subsection{System Implementation}
+
+\todo{2nd priority: for @kq: expand bullet points into paras, general implementation details}
 % What does your demonstration do and how does it work? What does it look like?
 •	The system is implemented in Go Language
 
@@ -11,6 +18,7 @@
 
 •	Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query.
 
+\subsubsection{Conversation Aggregation}
 
 •	There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages. After merging conversations, we rank them by the sum of the scores of messages they have using quicksort. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
 
@@ -26,14 +34,25 @@
 		$conversations \gets []$\\
 		$i \gets 0$\\
 		\ForEach{$message \in messages$}{
-			$conversation \gets queryConversation(message$)\\
+			$conversation \gets getSurroundingMessages(message$)\\
 			$conversations[i] \gets conversation$\\
 		}
 		\Return{rankConversations(mergeConversations($conversations$))}
 	}
 \end{algorithm}
 		
+\subsubsection{Conversation Scoring}
 
+\todo{3rd priority: for @kq: describe algorithms: mergeConversations, rankConversations}
 
+\subsection{Running a User Study}
 
+\todo{for @hs: description for how to use PECAN in a user study, how to use query logging, interaction logging.}
 
+\subsection{Batch Evaluation}
+
+\todo{for @hs}
+
+\subsection{Planned Features}
+
+\todo{4th priority: for @kq: channel filtering (in search time), filter by author, attachment search}
