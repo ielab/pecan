@@ -24,7 +24,7 @@ Traversing previous or next messages by clicking "previous messages" or "next me
 In this project, we use Go Language to implement the backend part of the system. We use elastic 7.0 as our serach engine. The elastic search provides a go module so that we can import and use it. The retrieval model we use to score messages is BM25. The score of each conversation is simply the sum of the scores of messages in that conversation. The retrieved conversations are merged and than ranked based on their scores. Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query. After getting all the conversations, users can traversing through messages that come before and after each conversation.
 
 \subsubsection{Conversation Aggregation}
-There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages. After merging conversations, we rank them by the sum of the scores of messages they have using quicksort. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
+There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages and rank them. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
 
 \begin{algorithm}
 	\SetAlgoLined
@@ -48,7 +48,7 @@ There are many ways to retrieve conversations instead of messages. In this proje
 \subsubsection{Conversation Scoring}
 
 \todo{3rd priority: for @kq: describe algorithms: mergeConversations, rankConversations}
-To merge the conversations we retrieved, we simply go through every conversation. Since different conversations may have different channels, we keep an index for each channel so that we don't merge conversations with different channels together. We store the merged conversations into an array and for each channel, we save the index of the last conversation of the same channel in a map. Therefore, for each conversation, we can look for it's previous conversation with the same channel and check if they are overlapped. If they are overlapped we merge them and replace the old conversation on the index with the new conversation. Otherwise we insert the new conversation into the array and update the index for that channel.
+To merge the conversations we retrieved, we simply go through every conversation. Since different conversations may have different channels, we keep an index for each channel so that we don't merge conversations with different channels together. We store the merged conversations into an array and for each channel, we save the index of the last conversation of the same channel in a map. Therefore, for each conversation, we can look for it's previous conversation with the same channel and check if they are overlapped. If they are overlapped we merge them and replace the old conversation on the index with the new conversation. Otherwise we insert the new conversation into the array and update the index for that channel. After merging conversations, we rank these conversations based on their scores. The algorithm that merges conversations are shown below.
 
 \begin{algorithm}
 	\SetAlgoLined
@@ -96,5 +96,10 @@ To merge the conversations we retrieved, we simply go through every conversation
 \todo{for @hs}
 
 \subsection{Planned Features}
+The current implementation of the system is only a very fundamental template. In the future, we will add more features such as channel filtering, query suggestion, query logging and interaction logging. We will also bring up more research tasks based on this system, such as chat summerisation.
 
 \todo{4th priority: for @kq: channel filtering (in search time), filter by author, attachment search}
+
+
+
+
