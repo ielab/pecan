@@ -1,58 +1,72 @@
 \graphicspath{ {./images/} }
 \section{Operation of the System}
 
+\todo{@kq: add nicer images}\\
+\todo{@kq: list the fields used in messages}\\
+
 \subsection{Searching for Conversations}
 
-\todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
+%\todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
+We first present a small case study that demonstrates some of the user interfaces that are built into PECAN. The homepage (Figure~\ref{fig:homepage}) of PECAN shows statistics about the number of messages that are indexed and several recent messages that have been indexed. One thing to note immediately is that it is possible for PECAN to (optionally) apply the same security considerations as the system that was originally used to send the messages. This allows private messages within a chat system to remain private. We achieve this by providing a pluggable authentication system.~\footnote{For more information about this, please refer to the GitHub repository.} Within the homepage, users may enter queries and filter their query to certain time periods, channels, and other users (depending on the original chat system). PECAN can also be configured to record query logs and fine-grained user interactions with the system, for improving searching for conversations effectiveness and for studying user behaviour in a user study setting.
 
-\includegraphics[scale=0.2]{homepage}
+Once users issue a query to PECAN, they are presented with a conversations results page (CORP), as presented in Figure~\ref{fig:searching}. On this page, users can explore conversations that are relevant to their query. Conversations are ranked according to their relevance to a given query. We describe our approach to scoring conversations in Section~\ref{sec:conv-scoring}. We choose to select five messages before and after a retrieved message to form a conversation. Note that this may result in some conversations with overlapping messages. To address this, we propose to aggregate conversations with overlapping messages. As a result, the CORP may contain conversations with more than ten messages. Our approach to aggregating conversations is described in Section~\ref{sec:conv-agg}.
 
-This is the homepage of the system.
-\bigbreak
+Finally, each conversation in the CORP can be further explored by viewing messages that occur before or after a conversation. Each conversation in the CORP contains buttons to view messages that occur before or after a conversation. Users are able to cycle through more messages indefinitely in order to fulfil their information need. The interface that users can use to explore these messages is presented in Figure~\ref{fig:traversing}.
 
-\includegraphics[scale=0.2]{searching}
+\begin{figure}
+	\includegraphics[width=\linewidth]{homepage}
+	\caption{The homepage of PECAN. Here, users can enter their search query and apply any search filters to refine their search. Statistics about the number of messages that are indexed are also shown, alongside several recently indexed messages.}
+	\label{fig:homepage}
+\end{figure}
 
-Searching for converstaions with query "party".
-\bigbreak
+\begin{figure}
+	\includegraphics[width=\linewidth]{searching}
+	\caption{The CORP page of a response to an example query `party'. Each conversation is ranked in terms of relevance to the input query, similar to contemporary SERPs. Conversations can be explored further by interacting with the `Previous Messages' and `Next Messages' buttons at the start and end of each conversation.}
+	\label{fig:searching}
+\end{figure}
 
-\includegraphics[scale=0.2]{traversing}
+\begin{figure}
+	\includegraphics[width=\linewidth]{traversing}
+	\caption{The conversation exploration page that users are presented with after clicking one of the `Previous Messages' or `Next Messages' buttons at the start and end of each conversation on the CORP. Users can continue to load more messages in the conversation indefinitely.}
+	\label{fig:traversing}
+\end{figure}
 
-Traversing previous or next messages by clicking "previous messages" or "next messages".
-\bigbreak
 
 \subsection{System Implementation}
-In this project, we use Go Language to implement the backend part of the system. We use elastic 7.0 as our serach engine. The elastic search provides a go module so that we can import and use it. The retrieval model we use to score messages is BM25. The score of each conversation is simply the sum of the scores of messages in that conversation. The retrieved conversations are merged and than ranked based on their scores. Users can access the system by searching with queries through an interface. The system will return conversations that are related to the query. After getting all the conversations, users can traversing through messages that come before and after each conversation.
+
+PECAN is implemented using the Go programming language. Go was chosen as it has been demonstrated to be an efficient server programming language. This is important as there may considerable overhead in more advanced algorithms than we have proposed that need to be executed at retrieval time (e.g., more complex conversation aggregation or scoring algorithms). For the underlying message storage engine, we use Elasticsearch 7.x. Elasticsearch is a highly scaleable search engine that is capable of ingesting and retrieving documents (in our case messages) in real time.
+
+Of the searching for conversation related research tasks that we raise in Section~\ref{sec:importance}, we have provided baseline implementations of two: conversation aggregation and conversation scoring. The following two sections provide a description of how we implement these methods in PECAN. 
 
 \subsubsection{Conversation Aggregation}
-There are many ways to retrieve conversations instead of messages. In this project we find conversations based on original messages. When we get a message, we define the five nearest messages before this message and five nearest messages after this message to be in the same conversation with this target message. We can retrieve these messages very easily with elastic search. These messages are then combined as one conversation. After retrieving all the conversations we want, we merge conversations that have identical messages and rank them. Normally, merged conversations are ranked higher than original conversations. Below is the pseudocode of the algorithm.
+\label{sec:conv-agg}
+
+There are many ways to retrieve conversations instead of messages, for example, one could decide to group messages together based on time, topicality, among others. The default behaviour we provide in PECAN is to aggregate messages into conversations based on the time messages were sent. A high-level overview of this algorithm is provided in Algorithm~\ref{algo:overview}. To form conversations, we first retrieve individual messages given a query. Next, we retrieve the five messages that were sent before and after the original message (including the original message). This is a fast operation within Elasticsearch, and can be done at retrieval time. All ten messages are then combined into a single conversation. One implementation detail we note is that for chat systems that have multiple `channels', we do not merge messages from different channels. This is because we believe that a conversation is tied to the context with which it occurred.
+
+Following the creation of the conversations, we proceed to merge conversations that contain overlapping messages. This process is detailed in Algorithm~\ref{algo:overview}.
+
+
 
 \begin{algorithm}
 	\SetAlgoLined
-	\caption{Retrieve Conversations}
+	\caption{High-level overview of how conversations are retrieved, scored, and ranked given a query.}
+	\label{algo:overview}
 	\SetKwInOut{Input}{inputs}
 	\SetKwInOut{Output}{output}
-	\SetKwProg{CreateConversations}{CreateConversations}{}{}
-	\CreateConversations{$(Messages)$}{
-		\Input{$messages$}
-		\Output{$conversations$}
-		$conversations \gets []$\\
-		$i \gets 0$\\
-		\ForEach{$message \in messages$}{
-			$conversation \gets getSurroundingMessages(message$)\\
-			$conversations[i] \gets conversation$\\
-		}
-		\Return{rankConversations(mergeConversations($conversations$))}
+	\Input{search query $q$}
+	\Output{list of conversations $C$}
+	Initialise messages $M$ as the result of executing $q$\\
+	Initialise $C\gets\emptyset$\\ 
+	\ForEach{$m\in M$}{
+		Add to $C$ the list of $k$ surrounding messages of $m$\\
 	}
-\end{algorithm}
+    Merge any overlapping $c\in C$ using Algorithm~\ref{algo:merge}\\
+	\Return{C}\end{algorithm}
 		
-\subsubsection{Conversation Scoring}
-
-\todo{3rd priority: for @kq: describe algorithms: mergeConversations, rankConversations}
-To merge the conversations we retrieved, we simply go through every conversation. Since different conversations may have different channels, we keep an index for each channel so that we don't merge conversations with different channels together. We store the merged conversations into an array and for each channel, we save the index of the last conversation of the same channel in a map. Therefore, for each conversation, we can look for it's previous conversation with the same channel and check if they are overlapped. If they are overlapped we merge them and replace the old conversation on the index with the new conversation. Otherwise we insert the new conversation into the array and update the index for that channel. After merging conversations, we rank these conversations based on their scores. The algorithm that merges conversations are shown below.
-
 \begin{algorithm}
 	\SetAlgoLined
-	\caption{Merge Conversations}
+	\caption{Merge Conversations \todo{@kq: simplify this}}
+	\label{algo:merge}
 	\SetKwInOut{Input}{inputs}
 	\SetKwInOut{Output}{output}
 	\SetKwProg{MergeConversations}{MergeConversations}{}{}
@@ -66,12 +80,12 @@ To merge the conversations we retrieved, we simply go through every conversation
 			\If{$index \neq null$ and $conversation[0].Timestamp >= 	C[index][len(C[index])-1].Timestamp$}{
 				\ForEach{$message \in conversation$}{
 					\If{$message.Timestamp < C[index][len(C[index])-1].Timestamp$}{
-							$C[index].append(message)$
+						$C[index].append(message)$
 					}
 					\ElseIf{$message.Score>0$}{
 						\ForEach{$keyMessage \in C[index]$}{
 							\If{$keyMessage.Timestamp == message.Timestamp$ AND $keyMessage.Text==message.Text$}{
-									$keyMessage \gets message$
+								$keyMessage \gets message$
 							}
 						}
 					}
@@ -84,7 +98,13 @@ To merge the conversations we retrieved, we simply go through every conversation
 		}
 		\Return{$C$}
 	}
-\end{algorithm}
+\end{algorithm}		
+		
+\subsubsection{Conversation Scoring}
+\label{sec:conv-scoring}
+
+After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap.
+
 
 
 \subsection{Running a User Study}
@@ -95,10 +115,10 @@ To merge the conversations we retrieved, we simply go through every conversation
 
 \todo{for @hs}
 
-\subsection{Planned Features}
-The current implementation of the system is only a very fundamental template. In the future, we will add more features such as channel filtering, query suggestion, query logging and interaction logging. We will also bring up more research tasks based on this system, such as chat summerisation.
-
-\todo{4th priority: for @kq: channel filtering (in search time), filter by author, attachment search}
+%\subsection{Planned Features}
+%The current implementation of the system is only a very fundamental template. In the future, we will add more features such as channel filtering, query suggestion, query logging and interaction logging. We will also bring up more research tasks based on this system, such as chat summerisation.
+%
+%\todo{4th priority: for @kq: channel filtering (in search time), filter by author, attachment search}
 
 
 

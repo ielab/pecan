@@ -23,7 +23,9 @@
 %%
 %% The first command in your LaTeX source must be the \documentclass command.
 \documentclass[sigconf]{acmart}
-\usepackage[ruled,vlined]{algorithm2e}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{calc}
+\usepackage{enumitem}
 %% Rights management information.  This information is sent to you
 %% when you complete the rights form.  These commands have SAMPLE
 %% values in them; it is your responsibility as an author to replace
@@ -160,7 +162,7 @@ A good demonstration submission should be interesting to a SIGIR audience and sh
 Many search offerings of popular chat services offer a sub-par experience. They mostly only allow searching for the exact messages that one might have in mind. Existing message search systems are not ideal, as the messages surrounding a targeted message often contain context to the information need. An example of this is looking for an answer to a question but forgetting how the question was posed. To find their answer, one may search for a conversation they knew that happened within the same time period. Indeed, within the context of chat message search, one is often not interested in individual messages relevant to a search query but a conversation of topically related messages. 
 As search practitioners, we often want to understand how Information Retrieval systems work to improve them. Furthermore, we suggest that existing chat search systems can be drastically improved by addressing the task of `search for conversations'. This new task proposes that search within chat messages should not be restricted to individual messages and that conversations of messages are the ideal unit of retrieval for such data. To this end, we propose \textbf{PECAN}: A \textbf{P}latform for s\textbf{E}arching \textbf{C}h\textbf{A}t co\textbf{N}versations.
 
-Our PECAN system targets teams and organisations of chat services that wish to provide their own search solution and Information Retrieval practitioners that wish to study how users search for conversations and improve the effectiveness of searching for conversation. PECAN provides all of the necessary tools to get started working on this task: a componentised framework to upgrade or implement new features, offline/batch retrieval for evaluation, and user study instrumentation (administration, query logging, interaction logging).
+PECAN targets teams and organisations of chat services that wish to provide their own search solution and Information Retrieval practitioners that wish to study how users search for conversations and improve the effectiveness of searching for conversation. PECAN provides all of the necessary tools to get started working on this task: a componentised framework to upgrade or implement new features, offline/batch retrieval for evaluation, and user study instrumentation (administration, query logging, interaction logging).
  
 \input{importance}
 \input{operation}
