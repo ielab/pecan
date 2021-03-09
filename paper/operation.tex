@@ -50,7 +50,7 @@ Finally, each conversation in the CORP can be further explored by viewing messag
 
 PECAN is implemented using the Go programming language. Go was chosen as it has been demonstrated to be an efficient server programming language. This is important as there may considerable overhead in more advanced algorithms than we have proposed that need to be executed at retrieval time (e.g., more complex conversation aggregation or scoring algorithms). For the underlying message storage engine, we use Elasticsearch 7.x. Elasticsearch is a highly scaleable search engine that is capable of ingesting and retrieving documents (in our case messages) in real time.
 
-Of the searching for conversation related research tasks that we raise in Section~\ref{sec:importance}, we have provided baseline implementations of two: conversation aggregation and conversation scoring. The following two sections provide a description of how we implement these methods in PECAN. 
+Of the searching for conversation related research tasks that we raise in Section~\ref{sec:importance}, we have provided baseline implementations of two: conversation aggregation and conversation scoring. The following two sections provide a description of how we implement these methods in PECAN. These implementations are part of a pluggable system, where new implementations are designed to be easy to add and extend. Please refer to the GitHub repository for details on how to implement new methods.
 
 \subsubsection{Conversation Aggregation}
 \label{sec:conv-agg}
@@ -85,14 +85,23 @@ Following the creation of the conversations, we proceed to merge conversations t
 After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap.
 
 
+\subsection{Add-ons}
 
-\subsection{Running a User Study}
+PECAN is designed to be a flexible research tool for conducting experiments involving the task of searching for conversations. As such, we provide two add-ons that cover many of the types of research that we see others performing.
 
-\todo{for @hs: description for how to use PECAN in a user study, how to use query logging, interaction logging.}
+\subsubsection{Running a User Study}
 
-\subsection{Batch Evaluation}
+In addition to the common use-case of searching for conversations, as any organisation or individual may want to use PECAN for, we also provide research-grade user study facilities in the form of an add-on. This add-on allows one to study aspects to searching for conversations such as user behaviour. In particular, the added functionality consists of:
+\begin{description}[noitemsep, leftmargin=8pt]
+\item[Query Logging] Queries that users issue to the system, and the filters that they apply can be logged directly to a file. 
+\item[Interaction Logging] Fine-grained user interactions with the web browser, such as mouse movements or keyboard events, can be logged directly to a file.
+\item[Screen Recording] Live screen recording of users interacting with the system, including their cursor, can be logged directly to a directory containing a series of images for each capture.
+\end{description}
 
-\todo{for @hs}
+\subsubsection{Batch Evaluation}
+
+Another add-on that we provide is the ability to run and evaluate batch-style evaluation for the task of searching for conversations. This add-on exposes a RESTful service where one may upload a set of queries and receive a TREC formatted run file as a response. In addition, one may specify an implementation of the research tasks listed in Section~\ref{sec:importance}. This could be to, for example, compare the effectiveness of two or more conversation scoring algorithms. 
+
 
 %\subsection{Planned Features}
 %The current implementation of the system is only a very fundamental template. In the future, we will add more features such as channel filtering, query suggestion, query logging and interaction logging. We will also bring up more research tasks based on this system, such as chat summerisation.
