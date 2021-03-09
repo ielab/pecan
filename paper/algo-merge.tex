@@ -1,0 +1,36 @@
+\begin{algorithm}
+	\SetAlgoLined
+	\caption{Merge Conversations \todo{@kq: simplify this}}
+	\label{algo:merge}
+	\SetKwInOut{Input}{inputs}
+	\SetKwInOut{Output}{output}
+	\SetKwProg{MergeConversations}{MergeConversations}{}{}
+	\MergeConversations{$(conversations)$}{
+		\Input{$conversations$}
+		\Output{$C$}
+		$mergedConvs \gets []$\\
+		$H \gets HashMap$\\
+		\ForEach{$conversation \in conversations$}{
+			$index \gets H.get(conversation[0].Channel)$\\
+			\If{$index \neq null$ and $conversation$ overlap with $mergedConvs[index]$}{
+				\ForEach{$message \in conversation$}{
+					\If{$message$ is older than $mergedConvs[index]$}{
+						$mergedConvs[index].append(message)$
+					}
+					\ElseIf{$message.Score>0$}{
+						\ForEach{$keyMessage \in mergedConvs[index]$}{
+							\If{$keyMessage$ and $message$ have same timestamp and content}{
+								$keyMessage \gets message$
+							}
+						}
+					}
+				}
+			}
+			\Else{
+				$mergedConvs.append(conversation)$
+				$H[conversation[0].Channel] = len(C) -1$
+			}
+		}
+		\Return{$mergedConvs$}
+	}
+\end{algorithm}	

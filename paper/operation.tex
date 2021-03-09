@@ -1,16 +1,22 @@
 \graphicspath{ {./images/} }
 \section{Operation of the System}
 
-\todo{@kq: add nicer images}\\
-\todo{@kq: list the fields used in messages}\\
-\subsection{Fields we saved for messages}
-• Message.Channel\\
-• Message.User\\
-• Message.Text\\
-• Message.EventTimestamp\\
-• Message.Timestamp (Same as EventTimestamp but in unix timestamp)\\
-• Message.SubType (Used in search.html)\\
-• Message.PreviousMessage\\
+The architecture of PECAN comprises a search engine message store, and web-server back-end, and a several add-ons that provide the functionality for running user studies and batch-style evaluation for the task of search for conversations. PECAN is made for bring-your-own-data: it provides the tools to search, present, and perform experiments on your data, but it does not provide a means to scraping chat messages. As such, an overview of the fields that are required to be indexed for the basic functioning of PECAN are presented in Table~\ref{table:fields}. We have chosen these fields as, in our opinion, they are the minimum required fields that almost all chat messaging systems today would use.
+
+\begin{table}
+\centering
+\begin{tabular}{ll}
+	\hline
+	Field     & Description                                        \\ \hline
+	Text      & The textual content of a message.                  \\
+	Timestamp & The time and date that a message was sent.         \\
+	User      & The user (or user identifier) that sent a message. \\
+	Type      & The type of message that is sent.                  \\
+	Channel   & Where a message was sent.                          \\ \hline
+\end{tabular}
+\caption{Necessary fields that must be included in the message index for the correct operation of PECAN. The purpose of the \textit{Type} field is to visually present messages in different ways, e.g., quoted messages. The \textit{Channel} field specifies the `location' the message was sent in a chat system, e.g., the public/private spaces of services such as Slack or Discord, or the groups or direct messages of services such as Signal or Whatsapp (note that services such as Slack and Discord also have direct messages).}
+\label{table:fields}
+\end{table}
 
 \subsection{Searching for Conversations}
 
@@ -71,42 +77,7 @@ Following the creation of the conversations, we proceed to merge conversations t
     Merge any overlapping $c\in C$ using Algorithm~\ref{algo:merge}\\
 	\Return{C}\end{algorithm}
 		
-\begin{algorithm}
-	\SetAlgoLined
-	\caption{Merge Conversations \todo{@kq: simplify this}}
-	\label{algo:merge}
-	\SetKwInOut{Input}{inputs}
-	\SetKwInOut{Output}{output}
-	\SetKwProg{MergeConversations}{MergeConversations}{}{}
-	\MergeConversations{$(conversations)$}{
-		\Input{$conversations$}
-		\Output{$C$}
-		$mergedConvs \gets []$\\
-		$H \gets HashMap$\\
-		\ForEach{$conversation \in conversations$}{
-			$index \gets H.get(conversation[0].Channel)$\\
-			\If{$index \neq null$ and $conversation$ overlap with $mergedConvs[index]$}{
-				\ForEach{$message \in conversation$}{
-					\If{$message$ is older than $mergedConvs[index]$}{
-						$mergedConvs[index].append(message)$
-					}
-					\ElseIf{$message.Score>0$}{
-						\ForEach{$keyMessage \in mergedConvs[index]$}{
-							\If{$keyMessage$ and $message$ have same timestamp and content}{
-								$keyMessage \gets message$
-							}
-						}
-					}
-				}
-			}
-			\Else{
-				$mergedConvs.append(conversation)$
-				$H[conversation[0].Channel] = len(C) -1$
-			}
-		}
-		\Return{$mergedConvs$}
-	}
-\end{algorithm}		
+\input{algo-merge.tex}	
 		
 \subsubsection{Conversation Scoring}
 \label{sec:conv-scoring}
