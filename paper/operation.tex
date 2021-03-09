@@ -3,6 +3,14 @@
 
 \todo{@kq: add nicer images}\\
 \todo{@kq: list the fields used in messages}\\
+\subsection{Fields we saved for messages}
+• Message.Channel\\
+• Message.User\\
+• Message.Text\\
+• Message.EventTimestamp\\
+• Message.Timestamp (Same as EventTimestamp but in unix timestamp)\\
+• Message.SubType (Used in search.html)\\
+• Message.PreviousMessage\\
 
 \subsection{Searching for Conversations}
 
@@ -70,21 +78,21 @@ Following the creation of the conversations, we proceed to merge conversations t
 	\SetKwInOut{Input}{inputs}
 	\SetKwInOut{Output}{output}
 	\SetKwProg{MergeConversations}{MergeConversations}{}{}
-	\MergeConversations{$(Messages)$}{
+	\MergeConversations{$(conversations)$}{
 		\Input{$conversations$}
 		\Output{$C$}
-		$C \gets []$\\
+		$mergedConvs \gets []$\\
 		$H \gets HashMap$\\
 		\ForEach{$conversation \in conversations$}{
 			$index \gets H.get(conversation[0].Channel)$\\
-			\If{$index \neq null$ and $conversation[0].Timestamp >= 	C[index][len(C[index])-1].Timestamp$}{
+			\If{$index \neq null$ and $conversation$ overlap with $mergedConvs[index]$}{
 				\ForEach{$message \in conversation$}{
-					\If{$message.Timestamp < C[index][len(C[index])-1].Timestamp$}{
-						$C[index].append(message)$
+					\If{$message$ is older than $mergedConvs[index]$}{
+						$mergedConvs[index].append(message)$
 					}
 					\ElseIf{$message.Score>0$}{
-						\ForEach{$keyMessage \in C[index]$}{
-							\If{$keyMessage.Timestamp == message.Timestamp$ AND $keyMessage.Text==message.Text$}{
+						\ForEach{$keyMessage \in mergedConvs[index]$}{
+							\If{$keyMessage$ and $message$ have same timestamp and content}{
 								$keyMessage \gets message$
 							}
 						}
@@ -92,11 +100,11 @@ Following the creation of the conversations, we proceed to merge conversations t
 				}
 			}
 			\Else{
-				$C.append(conversation)$
+				$mergedConvs.append(conversation)$
 				$H[conversation[0].Channel] = len(C) -1$
 			}
 		}
-		\Return{$C$}
+		\Return{$mergedConvs$}
 	}
 \end{algorithm}		
 		

@@ -385,10 +385,10 @@ func mergeConversations(conversations []Conversation) (mergedConversations []Con
 			continue
 		}
 		if index, ok := channelIndex[conversations[i][0].Channel]; ok {
-			if conversations[i][0].Timestamp >= mergedConversations[index][len(mergedConversations[index])-1].Timestamp {
+			if conversations[i][len(conversations[i])-1].Timestamp >= mergedConversations[index][0].Timestamp {
 				for j := range conversations[i] {
-					if conversations[i][j].Timestamp < mergedConversations[index][len(mergedConversations[index])-1].Timestamp {
-						mergedConversations[index] = append(mergedConversations[index], conversations[i][j])
+					if conversations[i][j].Timestamp < mergedConversations[index][0].Timestamp {
+						mergedConversations[index] = append([]Message{conversations[i][j]}, mergedConversations[index]...)
 					} else if conversations[i][j].Score > 0 {
 						for k := range mergedConversations[index] {
 							if mergedConversations[index][k].Timestamp == conversations[i][j].Timestamp && mergedConversations[index][k].Text == conversations[i][j].Text {
