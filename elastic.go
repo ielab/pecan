@@ -406,7 +406,7 @@ func mergeConversations(conversations []Conversation) (mergedConversations []Con
 			channelIndex[conversations[i][0].Channel] = len(mergedConversations) - 1
 		}
 	}
-	return conversations
+	return mergedConversations
 }
 
 type internalConv struct {
