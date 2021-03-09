@@ -25,14 +25,11 @@
         </fieldset>
     </form>
     <hr>
-    <article class="card flex two">
-        <img src="/static/logo.png" class="profile" style="width: 64px">
-        {{ if .Conversations }}
-            <h2 style="font-family: monospace;">Bzzrt! I found {{ len .Conversations }} conversations:</h2>
-        {{ else }}
-            <h2 style="font-family: monospace;">Urp! I didn't find any conversations.</h2>
-        {{ end }}
-    </article>
+    {{ if .Conversations }}
+        <h4>Found {{ len .Conversations }} conversations:</h4>
+    {{ else }}
+        <h4>No conversations found.</h4>
+    {{ end }}
     {{ $Type := .Type }}
     {{ $From := .From }}
     {{ $To := .To }}
