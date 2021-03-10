@@ -93,9 +93,11 @@ After merging conversations, we rank these conversations based on their scores. 
 
 PECAN is designed to be a flexible research tool for conducting experiments involving the task of searching for conversations. As such, we provide two add-ons that cover many of the types of research that can be performed using the tool.
 
+\vspace{-4pt}
 \subsubsection{Running a User Study}
 
 In addition to the common use-case of searching for conversations, as any organisation or individual may want to use PECAN for, we also provide research-grade user study facilities in the form of an add-on. This add-on allows one to study aspects of searching for conversations such as user behaviour. In particular, the added functionality consists of:
+\vspace{-2pt}
 \begin{description}[noitemsep, leftmargin=8pt]
 \item[Query Logging.] Queries that users issue to the system, and the filters that they apply can be logged directly to a file. 
 \item[Interaction Logging.] Fine-grained user interactions with the web browser, such as mouse movements or keyboard events, can be logged directly to a file.
@@ -103,6 +105,7 @@ In addition to the common use-case of searching for conversations, as any organi
 \item[Administration.] Design searching for conversations user experiments, specify task rotations, and administer users.
 \end{description}
 
+\vspace{-8pt}
 \subsubsection{Batch Evaluation}
 
 Another add-on that we provide is the ability to run and evaluate batch-style evaluation for the task of searching for conversations. This add-on exposes a RESTful service where one may upload a set of queries and receive a TREC formatted run file as a response. In addition, one may specify an implementation of the research tasks listed in Section~\ref{sec:importance}. This could be to, for example, compare the effectiveness of two or more conversation scoring algorithms. 
