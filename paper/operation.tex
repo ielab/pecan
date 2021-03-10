@@ -1,4 +1,6 @@
 \graphicspath{ {./images/} }
+
+\vspace{-8pt}
 \section{Operation of the System}
 
 The architecture of PECAN comprises a search engine message store, and web-server back-end, and several add-ons that provide the functionality for running user studies and batch-style evaluation for the task of search for conversations. PECAN is made for bring-your-own-data: it provides the tools to search, present, and perform experiments on your data, but currently it does not provide a means to scraping chat messages. As such, an overview of the fields that are required to be indexed for the basic functioning of PECAN are presented in Table~\ref{table:fields}. We have chosen these fields as, in our opinion, they are the minimum required fields that almost all chat messaging systems today would use. PECAN however allows for thee customisation of this list.
@@ -14,30 +16,30 @@ The architecture of PECAN comprises a search engine message store, and web-serve
 	Type      & The type of message that is sent.                  \\
 	Channel   & Where a message was sent.                          \\ \hline
 \end{tabular}
-\caption{Necessary fields that must be included in the message index for the correct operation of PECAN. The purpose of the \textit{Type} field is to visually present messages in different ways, e.g., quoted messages. The \textit{Channel} field specifies the `location' the message was sent in a chat system, e.g., the public/private spaces of services such as Slack or Discord, or the groups or direct messages of services such as Signal or Whatsapp (note that services such as Slack and Discord also have direct messages).}
+\caption{Necessary fields that must be included in the message index for the correct operation of PECAN. The purpose of the \textit{Type} field is to visually present messages in different ways, e.g., quoted messages. The \textit{Channel} field specifies the `location' the message was sent in a chat system, e.g., the public/private spaces of services such as Slack or Discord, or the groups or direct messages of services such as Signal or Whatsapp (note that services such as Slack and Discord also have direct messages).\vspace{-8pt}}
 \label{table:fields}
 \end{table}
 
 
 \begin{figure}[t!]
 	\fbox{\includegraphics[width=\linewidth]{homepage}}
-	\caption{The homepage of PECAN. Here, users can enter their search query and apply any search filters to refine their search. Statistics about the number of messages that are indexed are also shown, alongside several recently indexed messages.}
+	\caption{The homepage of PECAN. Here, users can enter their search query and apply any search filters to refine their search. Statistics about the number of messages that are indexed are also shown, alongside several recently indexed messages (omitted for space reasons).\vspace{-8pt}}
 	\label{fig:homepage}
 \end{figure}
 
-\begin{figure}[t!]
+\begin{figure}[b!]
 	\fbox{\includegraphics[width=\linewidth]{searching-cropped}}
-	\caption{The CORP page of a response to an example query `party'. Each conversation is ranked in terms of relevance to the input query, similar to contemporary SERPs. Conversations can be explored further by interacting with the `Previous Messages' and `Next Messages' buttons at the start and end of each conversation.}
+	\caption{The CORP page of a response to an example query `party'. Each conversation is ranked in terms of relevance to the input query, similar to contemporary SERPs. Conversations can be explored further by interacting with the `Previous Messages' and `Next Messages' buttons at the start and end of each conversation.\vspace{-8pt}}
 	\label{fig:searching}
 \end{figure}
 
-\begin{figure}[t!]
+\begin{figure}[b!]
 	\fbox{\includegraphics[width=\linewidth]{traversing}}
-	\caption{The conversation exploration page that users are presented with after clicking one of the `Previous Messages' or `Next Messages' buttons at the start and end of each conversation on the CORP. Users can continue to load more messages in the conversation indefinitely.}
+	\caption{The conversation exploration page that users are presented with after clicking one of the `Previous Messages' or `Next Messages' buttons at the start and end of each conversation on the CORP. Users can continue to load more messages in the conversation indefinitely.\vspace{-8pt}}
 	\label{fig:traversing}
 \end{figure}
 
-
+\vspace{-8pt}
 \subsection{Searching for Conversations}
 
 %\todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
@@ -61,8 +63,7 @@ There are many ways to retrieve conversations instead of messages, for example, 
 
 Following the creation of the conversations, we proceed to merge conversations that contain overlapping messages. This process is detailed in Algorithm~\ref{algo:overview}.
 
-
-
+\setlength{\textfloatsep}{0pt}
 \begin{algorithm}[t!]
 	\SetAlgoLined
 	\caption{High-level overview of how conversations are retrieved, scored, and ranked given a query.}
@@ -76,17 +77,18 @@ Following the creation of the conversations, we proceed to merge conversations t
 	\ForEach{$m\in M$}{
 		Add to $C$ the list of $k$ surrounding messages of $m$\\
 	}
-    Merge any overlapping $c\in C$ using Algorithm~\ref{algo:merge}\\
-	\Return{C}\end{algorithm}
-		
+	Merge any overlapping $c\in C$ using Algorithm~\ref{algo:merge}\\
+	\Return{C}
+\end{algorithm}	
+
 \input{algo-merge.tex}	
 		
 \subsubsection{Conversation Scoring}
 \label{sec:conv-scoring}
 
-After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap. We predict that there are many more signals for relevance within conversations, for example the time-frame a conversation spans or the length of a conversation, that can greatly improve ranking effectiveness. We leave this investigation for future work.
+After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap (line 8 in Algorithm~\ref{algo:merge}). We predict that there are many more signals for relevance within conversations, for example the time-frame a conversation spans or the length of a conversation, that can greatly improve ranking effectiveness. We leave this investigation for future work.
 
-
+\vspace{-8pt}
 \subsection{Add-ons}
 
 PECAN is designed to be a flexible research tool for conducting experiments involving the task of searching for conversations. As such, we provide two add-ons that cover many of the types of research that can be performed using the tool.
