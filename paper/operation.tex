@@ -18,6 +18,26 @@ The architecture of PECAN comprises a search engine message store, and web-serve
 \label{table:fields}
 \end{table}
 
+
+\begin{figure}[t!]
+	\fbox{\includegraphics[width=\linewidth]{homepage}}
+	\caption{The homepage of PECAN. Here, users can enter their search query and apply any search filters to refine their search. Statistics about the number of messages that are indexed are also shown, alongside several recently indexed messages.}
+	\label{fig:homepage}
+\end{figure}
+
+\begin{figure}[t!]
+	\fbox{\includegraphics[width=\linewidth]{searching-cropped}}
+	\caption{The CORP page of a response to an example query `party'. Each conversation is ranked in terms of relevance to the input query, similar to contemporary SERPs. Conversations can be explored further by interacting with the `Previous Messages' and `Next Messages' buttons at the start and end of each conversation.}
+	\label{fig:searching}
+\end{figure}
+
+\begin{figure}[t!]
+	\fbox{\includegraphics[width=\linewidth]{traversing}}
+	\caption{The conversation exploration page that users are presented with after clicking one of the `Previous Messages' or `Next Messages' buttons at the start and end of each conversation on the CORP. Users can continue to load more messages in the conversation indefinitely.}
+	\label{fig:traversing}
+\end{figure}
+
+
 \subsection{Searching for Conversations}
 
 %\todo{1st priority: for @kq: use images to describe how a user uses the system. each image has a caption, in the text expand upon the caption. give a "fake" case study, the user first enters a query, then they look through conversations, then they do blah... etc.}
@@ -26,24 +46,6 @@ We first present a small case study that demonstrates some of the user interface
 Once users issue a query to PECAN, they are presented with a conversations results page (CORP), as presented in Figure~\ref{fig:searching}. On this page, users can explore conversations that are relevant to their query. Conversations are ranked according to their relevance to a given query. We describe our approach to scoring conversations in Section~\ref{sec:conv-scoring}. We choose to select five messages before and after a retrieved message to form a conversation. Note that this may result in some conversations with overlapping messages. To address this, we propose to aggregate conversations with overlapping messages. As a result, the CORP may contain conversations with more than ten messages. Our approach to aggregating conversations is described in Section~\ref{sec:conv-agg}.
 
 Finally, each conversation in the CORP can be further explored by viewing messages that occur before or after a conversation. Each conversation in the CORP contains buttons to view messages that occur before or after a conversation. Users are able to cycle through more messages indefinitely in order to fulfil their information need. The interface that users can use to explore these messages is presented in Figure~\ref{fig:traversing}.
-
-\begin{figure}
-	\includegraphics[width=\linewidth]{homepage}
-	\caption{The homepage of PECAN. Here, users can enter their search query and apply any search filters to refine their search. Statistics about the number of messages that are indexed are also shown, alongside several recently indexed messages.}
-	\label{fig:homepage}
-\end{figure}
-
-\begin{figure}
-	\includegraphics[width=\linewidth]{searching}
-	\caption{The CORP page of a response to an example query `party'. Each conversation is ranked in terms of relevance to the input query, similar to contemporary SERPs. Conversations can be explored further by interacting with the `Previous Messages' and `Next Messages' buttons at the start and end of each conversation.}
-	\label{fig:searching}
-\end{figure}
-
-\begin{figure}
-	\includegraphics[width=\linewidth]{traversing}
-	\caption{The conversation exploration page that users are presented with after clicking one of the `Previous Messages' or `Next Messages' buttons at the start and end of each conversation on the CORP. Users can continue to load more messages in the conversation indefinitely.}
-	\label{fig:traversing}
-\end{figure}
 
 
 \subsection{System Implementation}
@@ -61,14 +63,14 @@ Following the creation of the conversations, we proceed to merge conversations t
 
 
 
-\begin{algorithm}
+\begin{algorithm}[t!]
 	\SetAlgoLined
 	\caption{High-level overview of how conversations are retrieved, scored, and ranked given a query.}
 	\label{algo:overview}
 	\SetKwInOut{Input}{inputs}
 	\SetKwInOut{Output}{output}
-	\Input{search query $q$}
-	\Output{list of conversations $C$}
+	\Input{Search query $q$}
+	\Output{List of conversations $C$}
 	Initialise messages $M$ as the result of executing $q$\\
 	Initialise $C\gets\emptyset$\\ 
 	\ForEach{$m\in M$}{
@@ -82,7 +84,7 @@ Following the creation of the conversations, we proceed to merge conversations t
 \subsubsection{Conversation Scoring}
 \label{sec:conv-scoring}
 
-After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap.
+After merging conversations, we rank these conversations based on their scores. Our conversation scoring method exploits the fact that individual messages are scored at retrieval time (i.e., line 1 in Algorithm~\ref{algo:overview}). By default, each conversation inherits the score assigned to the original message that formed the conversation. However, when a conversation is composed by merging two conversations together, we sum the scores of the two messages that overlap. We predict that there are many more signals for relevance within conversations, for example the time-frame a conversation spans or the length of a conversation, that can greatly improve ranking effectiveness. We leave this investigation for future work.
 
 
 \subsection{Add-ons}

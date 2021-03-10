@@ -1,32 +1,28 @@
-\begin{algorithm}
+\begin{algorithm}[t!]
 	\SetAlgoLined
-	\caption{Merge Conversations}
+	\caption{High-level algorithm for merging conversations. This algorithm also updates the scores of conversation (line 8) as described in Section~\ref{sec:conv-scoring}.}
 	\label{algo:merge}
 	\SetKwInOut{Input}{inputs}
 	\SetKwInOut{Output}{output}
 	\SetKwProg{MergeConversations}{MergeConversations}{}{}
-	\MergeConversations{$(conversations)$}{
-		\Input{$conversations$}
-		\Output{$C$}
-		$mergedConversations \gets []$\\
-		$H \gets HashMap$\\
-		\ForEach{$conversation \in conversations$\\}{
-			$index \gets H.get(conversation[0].Channel)$\\
-			\If{$index \neq null$ and $conversation$ overlap with $mergedConvsations[index]$\\}{
-				\ForEach{$message \in conversation$}{
-					\If{$message$ is older than $mergedConversations[index]$\\}{
-						$mergedConversations[index].append(message)$\\
-					}
-					\ElseIf{$message.Score>0$\\}{
-						Update the score to $mergedConversations$\\
-					}
+
+	\Input{List of conversations $C$}
+	\Output{Merged conversations $\hat{C}$}
+	Initialise $\hat{C}\gets\emptyset$\\
+	\ForEach{$c_i \in C$\\}{
+		\uIf{$c_i\in\hat{C}$}{
+			\ForEach{$c_j\in C$}{
+				\If{$c_i\cap c_j>0$}{
+					$c_i<\gets c_i\cup c_j$ \\
+					Set score of $c_i$ to \texttt{score}($c_i$)+\texttt{score}($c_j$)\\
+					\texttt{goto} 13
 				}
 			}
-			\Else{
-				$mergedConvsations.append(conversation)$
-				$H[conversation[0].Channel] = len(C) -1$
-			}
+    	}
+    	\Else {
+			Add $c_i$ to $\hat{C}$
 		}
-		\Return{$mergedConvsations$}
 	}
+	\Return{$\hat{C}$}
+
 \end{algorithm}	

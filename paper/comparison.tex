@@ -2,22 +2,10 @@
 
 In our survey of the literature, we found no such research for the explicit task of searching for conversations. More so, we did not identify any such research-oriented system for searching chat conversations, or messages for that matter. However, in terms of the the searching for conversations research tasks established in Section~\ref{sec:importance}, we have identified a number of works that have addressed these tasks, and would have benefited from the PECAN ecosystem.
 
-For the task of conversation aggregations ...
+For the task of conversation scoring, Magnani et al.~\cite{magnani2012conversation} propose a conversation ranking framework for micro-blogging (e.g., Twitter). For this task, there are many signals of relevance that do not exist in our task, for example, popularity metrics such as likes. This task also models conversations with explicit replies to posts. Our task differs in that multiple different, overlapping conversations may occur all at the same time.
 
+In terms of conversation aggregation, Khan et al.~\cite{khan2002mining} identify this as a problem for studying tasks involving chat messages and propose a rule-based classification system to detect when conversations begin and end. However, their results highlight that rule-based methods are not scaleable, especially in multi-lingual contexts. Shen et al.~\cite{shen2006thread} takes a different approach and instead attempt to detect topically related conversations in chat messages using a novel single-pass clustering algorithm. Such methods are possible to be implemented directly into PECAN, allowing research into this task.
 
-For the task of conversation scoring ...
+While we did not identify any works on query suggestion for chat messages or chat conversations, we did identify research in related domains. For example, Mishne et al.~\cite{mishne2013fast} present an architecture of Twitter's real-time related query suggestion works. In this work, the authors use relevance signals from query logs to suggest related queries to users. Carmel et al.~\cite{carmel2017demographics} investigate demographical applications to query suggestion in email search, where one could consider similarities between email and chat messages. Their results indicate that personalisation is important for suggesting effective queries. PECAN's query logging may be used to capture data related to these works, allowing research into this task.
 
-For the task of query suggestion ...
-
-For the task of conversation summarisation ...
-
-For the task of related conversations ...
-
-
-\cite{shen2006thread}, the authors used a single-pass clustering algorithm and it's variations to do thread detection.
-	 
-In \cite{khan2002mining}, the authors also mentioned three ways to extract items or topics from a chat messages. The simplest approach is to separate the chat based on time range. This approach does not work very well because conversations are usually not continuous. The second approach is to use topic segmentors to identify conversational flows as threads. However, much information can be lost when separating contents into groups. The revised approach is to classify threads into thread starts and non-thread starts and attach non-thread starts to appropriate thread starts. 
-	
-The article \cite{magnani2012conversation} introduces a model to define on-line conversation and distinguish it from off-line conversation.
-	
-	
+For the task of conversation summarisation Bengel et al.~\cite{bengel2004chattrack} propose an interface for intelligence agencies to monitor chat participants that can identify latent topics of conversations in channels or of individual users. They also provide a basic interface that allows agents to search for messages. Our idea of conversation summarisation differs from this in that we seek to provide a succinct summary of the conversation that took place, rather than trying to classify the topics of conversation. 
