@@ -26,7 +26,7 @@ func randState() string {
 
 func main() {
 
-	config, err := slackarchive.NewConfig("config.sample.json")
+	config, err := slackarchive.NewConfig("config.json")
 	if err != nil {
 		panic(err)
 	}
@@ -201,7 +201,6 @@ func main() {
 		token := randState()
 		tokens[token] = accessToken
 		session.Set("token", token)
-		fmt.Println(accessToken)
 		err = session.Save()
 		if err != nil {
 			panic(err)
