@@ -13,15 +13,24 @@
     <div class="flex one three-600">
         <div></div>
         <div>
-            <article class="card">
-                <img src="static/logo.png" width="120px">
-                <footer>
-                    <h1>Login</h1>
-                    <p>Login using slack. Only archived chats that you have access to will be available upon login.</p>
-                    <!-- &redirect_uri=https://1e8ede83.ngrok.io/login/oauth -->
-                    <a href="https://slack.com/oauth/authorize?scope=usergroups:read,groups:read,channels:read,im:read,mpim:read&client_id=112293530195.812571961504"><img src="https://api.slack.com/img/sign_in_with_slack.png"/></a>
-                </footer>
-            </article>
+            {{ if eq .API.Use "slack" }}
+                <article class="card">
+                    <img src="static/logo.png" width="120px" alt="PECAN logo">
+                    <footer>
+                        <h1>Login</h1>
+                        <p>Login using slack. Only archived chats that you have access to will be available upon login.</p>
+                        <a href="https://slack.com/oauth/authorize?scope=usergroups:read,groups:read,channels:read,im:read,mpim:read&client_id={{.API.Slack.ClientId}}"><img src="https://api.slack.com/img/sign_in_with_slack.png" alt="login button"/></a>
+                    </footer>
+                </article>
+            {{ else }}
+                <article class="card">
+                    <footer>
+                        <h1>Whoops!</h1>
+                        <p>PECAN is not currently configured to use any kind of login.</p>
+                        <a href="/">go home?</a>
+                    </footer>
+                </article>
+            {{ end }}
         </div>
         <div></div>
     </div>

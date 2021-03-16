@@ -36,16 +36,16 @@
     <div class="flex one">
         {{ range $Conversation := .Conversations }}
             <article class="card">
-                <p>Messages from {{ (index $Conversation 0).EventTimestamp }} to {{ (index $Conversation (add (len $Conversation) -1)).EventTimestamp }} in {{ (index $Conversation 0).Channel }}</p>
+                <p>{{ len $Conversation.Messages }} Messages from {{ (index $Conversation.Messages 0).EventTimestamp }} to {{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).EventTimestamp }} in {{ (index $Conversation.Messages 0).Channel }}</p>
                 <form method="post" action="/more_messages">
                     <input type="hidden" name="prev_next" value="0">
-                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation 0).Timestamp }}">
-                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation 0).Channel }}">
+                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages 0).Timestamp }}">
+                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages 0).Channel }}">
                     <input type="hidden" value="{{ $From }}" name="from">
                     <input type="hidden" value="{{ $To }}" name="to">
                     <button style="font-size: 12px; margin: 6px" type="submit">Previous Messages</button>
                 </form>
-                {{ range $Message := $Conversation }}
+                {{ range $Message := $Conversation.Messages }}
                     {{ if eq .SubType "message_deleted" }}
                         {{ if .PreviousMessage }}
                             <header>
@@ -84,8 +84,8 @@
                 {{end}}
                 <form method="post" action="/more_messages">
                     <input type="hidden" name="prev_next" value="1">
-                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation (add (len $Conversation) -1)).Timestamp }}">
-                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation (add (len $Conversation) -1)).Channel }}">
+                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Timestamp }}">
+                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Channel }}">
                     <input type="hidden" value="{{ $From }}" name="from">
                     <input type="hidden" value="{{ $To }}" name="to">
                     <button style="font-size: 12px; margin: 6px" type="submit">Next Messages</button>

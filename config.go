@@ -1,22 +1,23 @@
-package slackarchive
+package pecan
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"github.com/olivere/elastic/v7"
 	"io/ioutil"
 )
 
 // Config contains any and all configuration items
 // for the proper functioning of this application.
 type Config struct {
-	Slack struct {
-		Token             string `json:"token"`
-		VerificationToken string `json:"verification_token"`
-		ClientId          string `json:"client_id"`
-		ClientSecret      string `json:"client_secret"`
-	} `json:"slack"`
+	API struct {
+		Use   string `json:"use"`
+		Slack struct {
+			Token             string `json:"token"`
+			VerificationToken string `json:"verification_token"`
+			ClientId          string `json:"client_id"`
+			ClientSecret      string `json:"client_secret"`
+		} `json:"slack"`
+	}
 	Elasticsearch struct {
 		Login struct {
 			Username string `json:"username"`
@@ -28,14 +29,6 @@ type Config struct {
 	Secrets struct {
 		Cookie string `json:"cookie"`
 	} `json:"secrets"`
-	Options struct {
-		DevEnvironment bool     `json:"dev_environment"`
-		DevChannels    []string `json:"dev_channels"`
-	}
-	DevEnvironment struct {
-		DevGetConversations       func(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Conversation, error)
-		DevGetRecentConversations func(es *elastic.Client, ctx context.Context, channels []string) ([]Conversation, error)
-	}
 }
 
 // NewConfig creates a new config that can be used, as read
@@ -53,13 +46,6 @@ func NewConfig(path string) (*Config, error) {
 	err = json.NewDecoder(bytes.NewBuffer(b)).Decode(&config)
 	if err != nil {
 		return nil, err
-	}
-
-	// Doing this allows the main method to access these otherwise
-	// private methods that should only be used in a dev setting.
-	if config.Options.DevEnvironment {
-		config.DevEnvironment.DevGetConversations = getConversationsDev
-		config.DevEnvironment.DevGetRecentConversations = getRecentConversationsDev
 	}
 
 	return &config, nil

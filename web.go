@@ -1,4 +1,4 @@
-package slackarchive
+package pecan
 
 import (
 	"time"
@@ -48,4 +48,6 @@ type SearchRequest struct {
 	PrevNext           int    `form:"prev_next"`
 	BaseMessageTime    string `form:"base_message_time"`
 	BaseMessageChannel string `form:"base_message_channel"`
+
+	Index string
 }
