@@ -108,7 +108,7 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-Often, existing chat services that organisations and individuals use today provide a way to search through previously sent messages. However, many of these chat services provide far-limited search functionalities, typically exact matching on individual messages. In this paper, we introduce a new task for addressing this problem, called searching for conversations, whereby the aim is to retrieve and rank groups of related messages given a search query. We promote this task by providing a platform for research and development called PECAN. Our platform provides all the necessary functionality researchers need to conduct experiments on searching for conversations. Our system is also generic so as to support organisations and individuals who wish to search through their chat message archives.
+Often, existing chat services that organisations and individuals use today provide a way to search through previously sent messages. However, many of these chat services provide far-limited search functionalities, typically exact matching on individual messages. In this paper, we introduce a new task for addressing this problem, called \textit{searching for conversations}, whereby the aim is to retrieve and rank groups of related messages given a search query. We promote this task by providing a platform for research and development called PECAN. Our platform provides all the necessary functionality researchers need to conduct experiments on searching for conversations. Our system is also generic so as to support organisations and individuals who wish to search through their chat message archives.
 
 We release PECAN to the wider community as an Open Source project available for download at \href{https://github.com/ielab/pecan}{https://github.com/ielab/pecan}.
 \end{abstract}
@@ -161,7 +161,7 @@ We release PECAN to the wider community as an Open Source project available for 
 
 \section{Problem, Target Users \& Importance}
 
-Many search offerings of popular chat and messaging services offer a sub-par experience: they mostly only allow exact matches between the user's query and their messages. However, this is not ideal because (1) the messages surrounding a targeted message often contain context to the information need, (2) semantic mismatch between the query and the messages severely impact retrieval quality. 
+Many search offerings of popular chat and messaging services of the likes of Slack, Discord, Signal, Whatsapp, etc., offer a sub-par experience: they mostly only allow exact matches between the user's query and their messages. However, this is not ideal because (1) the messages surrounding a targeted message often contain context to the information need, (2) semantic mismatch between the query and the messages severely impact retrieval quality. 
 %. They mostly only allow searching for the exact messages that one might have in mind. 
 %Existing message search systems are not ideal, as the messages surrounding a targeted message often contain context to the information need. 
 An example of this is when searching for an answer to a question but not remembering how the question was posed. To find their answer, one may search for a conversation they knew that happened within the same time period. Indeed, within the context of chat message search, one is often not interested in individual messages relevant to a search query, but a \textit{conversation} of topically related messages. 
