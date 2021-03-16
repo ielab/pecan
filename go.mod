@@ -1,4 +1,4 @@
-module github.com/ielab/slackarchive
+module github.com/ielab/pecan
 
 go 1.13
 

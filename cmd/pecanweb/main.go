@@ -6,7 +6,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/ielab/slackarchive"
+	"github.com/ielab/pecan"
 	"github.com/olivere/elastic/v7"
 	"html/template"
 	"log"
