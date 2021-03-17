@@ -197,8 +197,8 @@ func (api *SlackChatAPI) GetChannelsForUser(accessToken string) ([]string, error
 
 // GetMessages uses the slack API to retrieve the channels an authenticated user has access to
 // and then retrieves messages from these channels using a search request.
-func (api *SlackChatAPI) GetMessages(c *gin.Context, es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error) {
-	session := sessions.Default(c)
+func (api *SlackChatAPI) GetMessages(es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error) {
+	session := sessions.Default(request.Context)
 	token := api.tokens[session.Get("token").(string)]
 
 	channels, err := api.GetChannelsForUser(token)

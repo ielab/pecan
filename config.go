@@ -29,6 +29,7 @@ type Config struct {
 	Secrets struct {
 		Cookie string `json:"cookie"`
 	} `json:"secrets"`
+	Addons []string `json:"addons"`
 }
 
 // NewConfig creates a new config that can be used, as read

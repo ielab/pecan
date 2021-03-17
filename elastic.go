@@ -3,9 +3,7 @@ package pecan
 import (
 	"context"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +11,7 @@ import (
 
 type Message struct {
 	Score           float64
+	Id              string
 	User            string   `json:"user,omitempty"`
 	SubType         string   `json:"subtype,omitempty"`
 	PreviousMessage *Message `json:"previous_message,omitempty"`
@@ -41,8 +40,8 @@ func searchResponseToMessages(resp *elastic.SearchResult) ([]Message, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		var msg Message
+		msg.Id = hit.Id
 		err = json.Unmarshal(b, &msg)
 		if err != nil {
 			return nil, err
@@ -78,17 +77,6 @@ func buildChannelFilterQuery(channels []string) []elastic.Query {
 	return filters
 }
 
-// queryRecentMessages retrieves a top-k set of recent messages given a slice of channels.
-func queryRecentMessages(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) (*elastic.SearchResult, error) {
-	filters := buildChannelFilterQuery(channels)
-
-	return es.Search(request.Index).
-		Query(elastic.NewBoolQuery().Should(filters...)).
-		Sort("ts", false).
-		Size(SearchSize).
-		Do(ctx)
-}
-
 // queryMessages retrieves indexed messages using a search request.
 func queryMessages(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) (*elastic.SearchResult, error) {
 	return es.Search(request.Index).
@@ -101,63 +89,6 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 		TrackScores(true).
 		Sort("ts", false).
 		Do(ctx)
-}
-
-// queryConversation retrieves messages in a conversation based on original messages
-func queryConversation(es *elastic.Client, ctx context.Context, channels []string, message Message, request SearchRequest) ([]Message, error) {
-	t, err := strconv.ParseFloat(message.Timestamp, 64)
-	if err != nil {
-		return nil, err
-	}
-	left, err := es.Search(request.Index).
-		Query(elastic.NewBoolQuery().Must(
-			elastic.NewRangeQuery("ts").Lte(int64(t)),
-			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-		Size(6).
-		Sort("ts", false).
-		Do(ctx)
-	if err != nil {
-		return nil, err
-	}
-	leftMessages, err := searchResponseToMessages(left)
-	if err != nil {
-		return nil, err
-	}
-	if len(leftMessages) > 0 {
-		leftMessages[0].Score = message.Score
-	}
-
-	right, err := es.Search(request.Index).
-		Query(elastic.NewBoolQuery().Must(
-			elastic.NewRangeQuery("ts").Gt(int64(t)),
-			elastic.NewBoolQuery().Must(buildChannelFilterQuery(channels)...))).
-		Size(5).
-		Sort("ts", true).
-		Do(ctx)
-	if err != nil {
-		return nil, err
-	}
-	rightMessages, err := searchResponseToMessages(right)
-	if err != nil {
-		return nil, err
-	}
-
-	// Reverse the leftMessages slice.
-	for i, j := 0, len(leftMessages)-1; j > i; i, j = i+1, j-1 {
-		leftMessages[i], leftMessages[j] = leftMessages[j], leftMessages[i]
-	}
-	//return leftMessages, nil
-	return append(leftMessages, rightMessages...), nil
-}
-
-// GetConversations uses the slack API to retrieve the channels an authenticated user has access to
-// and then retrieves conversations from these channels using a search request.
-func GetConversations(c *gin.Context, es *elastic.Client, ctx context.Context, request SearchRequest, api ChatAPI, exec TaskExecutor) ([]Conversation, error) {
-	messages, err := api.GetMessages(c, es, ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	return createConversations(es, ctx, messages, exec, request)
 }
 
 // MoreMessages retrieves extra messages if required by the user
@@ -238,37 +169,4 @@ func MoreMessages(es *elastic.Client, ctx context.Context, channels []string, re
 
 	}
 	return result, err
-}
-
-// createConversations retrieves conversations based on the retrieved messages.
-// This is the main method that should be used to retrieve conversations.
-func createConversations(es *elastic.Client, ctx context.Context, messages []Message, exec TaskExecutor, request SearchRequest) ([]Conversation, error) {
-	var conversations []Conversation
-	for i := range messages {
-		conversation, err := queryConversation(es, ctx, []string{messages[i].Channel}, messages[i], request)
-		if err != nil {
-			return nil, err
-		}
-		conversations = append(conversations, Conversation{
-			Score:    0,
-			Messages: conversation,
-		})
-	}
-
-	merged, err := exec.AggregateConversations(conversations)
-	if err != nil {
-		return nil, err
-	}
-
-	scored, err := exec.ScoreConversations(merged)
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Slice(scored, func(i, j int) bool {
-		return scored[i].Score > scored[j].Score
-	})
-
-	return scored, nil
-
 }

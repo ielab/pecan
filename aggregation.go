@@ -1,6 +1,6 @@
 package pecan
 
-type AggregateConversations func(conversations []Conversation) ([]Conversation, error)
+type AggregateFunc func(conversations []Conversation) ([]Conversation, error)
 
 // mergeConversations merge conversations that are overlapping with each other.
 // At the same time, save the messages with positive scores to the merged conversation

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/ielab/pecan"
+	"github.com/ielab/pecan/addon"
 	"github.com/olivere/elastic/v7"
 	"html/template"
 	"log"
@@ -44,6 +45,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	exec := pecan.NewTaskExecutor(api, es)
 
 	router := gin.Default()
 
@@ -109,13 +112,10 @@ func main() {
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.
 		if err := c.ShouldBind(&request); err == nil && len(request.Query) > 0 {
+			//request.Context = c
+			request.Index = config.Elasticsearch.Index
 			// Determine which method should be used to search.
-			conversations, err = pecan.GetConversations(c, es, ctx, request, api, pecan.TaskExecutor{
-				// TODO: in future, this should be inferred from the request.
-				AggregateConversations: pecan.TimeAggregator,
-				ScoreConversations:     pecan.MessageScorer,
-			})
-
+			conversations, err = exec.GetConversations(ctx, request)
 			if err != nil {
 				panic(err)
 			}
@@ -179,6 +179,14 @@ func main() {
 	router.GET("/login/oauth", func(c *gin.Context) {
 		api.HandleOAuth(c)
 	})
+
+	for _, addonName := range config.Addons {
+		if a, ok := addon.Addons[addonName]; ok {
+			a.Initialise(es, api, config)
+			router.GET(path.Join("/addon/", addonName), a.Handler())
+			router.POST(path.Join("/addon/", addonName), a.Handler())
+		}
+	}
 
 	fmt.Print(`
 	 ____  _____ ____    _    _   _ 

@@ -1,6 +1,7 @@
 package pecan
 
 import (
+	"github.com/gin-gonic/gin"
 	"time"
 )
 
@@ -36,9 +37,9 @@ type StatisticsResponse struct {
 }
 
 type SearchRequest struct {
-	Query string    `form:"q"`
-	From  time.Time `form:"from" time_format:"2006-01-02"`
-	To    time.Time `form:"to" time_format:"2006-01-02"`
+	Query string    `form:"q" json:"query"`
+	From  time.Time `form:"from" json:"from" time_format:"2006-01-02"`
+	To    time.Time `form:"to" json:"to" time_format:"2006-01-02"`
 
 	Start int `form:"start"`
 	Next  int `form:"next"`
@@ -49,5 +50,6 @@ type SearchRequest struct {
 	BaseMessageTime    string `form:"base_message_time"`
 	BaseMessageChannel string `form:"base_message_channel"`
 
-	Index string
+	Index   string       `form:"-"`
+	Context *gin.Context `form:"-"`
 }

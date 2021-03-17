@@ -7,7 +7,7 @@ import (
 )
 
 type ChatAPI interface {
-	GetMessages(c *gin.Context, es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error)
+	GetMessages(es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error)
 	HandleOAuth(c *gin.Context)
 	HandleAuthentication(c *gin.Context)
 }

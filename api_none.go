@@ -9,7 +9,7 @@ import (
 type NoChatAPI struct {
 }
 
-func (api *NoChatAPI) GetMessages(c *gin.Context, es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error) {
+func (api *NoChatAPI) GetMessages(es *elastic.Client, ctx context.Context, request SearchRequest) ([]Message, error) {
 	resp, err := queryMessages(es, ctx, nil, request)
 	if err != nil {
 		return nil, err
