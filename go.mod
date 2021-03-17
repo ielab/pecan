@@ -1,6 +1,6 @@
 module github.com/ielab/pecan
 
-go 1.13
+go 1.16
 
 require (
 	github.com/gin-contrib/sessions v0.0.3

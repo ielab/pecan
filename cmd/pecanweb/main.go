@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -11,9 +12,16 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 )
+
+//go:embed web/*
+var webFS embed.FS
+
+//go:embed web/static/*
+var staticFS embed.FS
 
 func main() {
 
@@ -38,11 +46,20 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.SetFuncMap(template.FuncMap{"add": func(a, b int) int {
-		return a + b
-	}})
-	router.LoadHTMLGlob("./web/*.html")
-	router.Static("/static/", "./web/static")
+
+	templates := template.Must(
+		template.New("").
+			Funcs(
+				template.FuncMap{"add": func(a, b int) int {
+					return a + b
+				}}).
+			ParseFS(webFS, "web/*.html"))
+	router.SetHTMLTemplate(templates)
+
+	router.GET("/static/*filepath", func(c *gin.Context) {
+		c.FileFromFS(path.Join("/web/", c.Request.URL.Path), http.FS(staticFS))
+	})
+	
 
 	// Middleware for redirecting for authentication.
 	store := cookie.NewStore([]byte(config.Secrets.Cookie))
