@@ -1,20 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>ielab slack archives</title>
-    <link rel="stylesheet" href="/static/picnic.min.css">
-    <link rel="stylesheet" href="/static/archiver.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-<div style="overflow: hidden;height: 64px;"></div>
-<nav>
-    <a href="/" class="brand">
-        <span>PECAN</span>
-    </a>
-</nav>
-<main>
+{{define "title"}}PECAN Home{{end}}
+{{template "header"}}
     <form method="get" action="/search">
         <fieldset class="flex four">
             <label class="full"><input type="search" placeholder="Search for messages" name="q"></label>
@@ -31,7 +16,4 @@
             <h1>{{.NumMessages}}</h1>
         </footer>
     </article>
-</main>
-</body>
-
-</html>
+{{template "footer"}}

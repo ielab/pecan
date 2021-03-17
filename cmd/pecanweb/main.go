@@ -50,16 +50,17 @@ func main() {
 	templates := template.Must(
 		template.New("").
 			Funcs(
-				template.FuncMap{"add": func(a, b int) int {
-					return a + b
-				}}).
+				template.FuncMap{
+					"add": func(a, b int) int {
+						return a + b
+					},
+				}).
 			ParseFS(webFS, "web/*.html"))
 	router.SetHTMLTemplate(templates)
 
 	router.GET("/static/*filepath", func(c *gin.Context) {
 		c.FileFromFS(path.Join("/web/", c.Request.URL.Path), http.FS(staticFS))
 	})
-	
 
 	// Middleware for redirecting for authentication.
 	store := cookie.NewStore([]byte(config.Secrets.Cookie))

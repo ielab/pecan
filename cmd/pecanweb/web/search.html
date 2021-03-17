@@ -1,119 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>ielab slack archives</title>
-    <link rel="stylesheet" href="/static/picnic.min.css">
-    <link rel="stylesheet" href="/static/archiver.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-<div style="overflow: hidden;height: 64px;"></div>
-<nav>
-    <a href="/" class="brand">
-        <span>PECAN</span>
-    </a>
-</nav>
-<main>
-    <form method="get" action="/search">
-        <fieldset class="flex four">
-            <label class="full"><input type="search" placeholder="Search for messages" name="q" value="{{ .Query }}"></label>
-            <label><input type="date" value="{{ .From }}" name="from"></label>
-            <label><input type="date" value="{{ .To }}" name="to"></label>
-            <input type="hidden" name="start" value="0">
-            <label><input type="submit" value="Search"></label>
-        </fieldset>
-    </form>
-    <hr>
-    {{ if .Conversations }}
-        <h4>Found {{ len .Conversations }} conversations:</h4>
-    {{ else }}
-        <h4>No conversations found.</h4>
-    {{ end }}
-    {{ $Type := .Type }}
-    {{ $From := .From }}
-    {{ $To := .To }}
-    <div class="flex one">
-        {{ range $Conversation := .Conversations }}
-            <article class="card">
-                <p>{{ len $Conversation.Messages }} Messages from {{ (index $Conversation.Messages 0).EventTimestamp }} to {{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).EventTimestamp }} in {{ (index $Conversation.Messages 0).Channel }}</p>
-                <form method="post" action="/more_messages">
-                    <input type="hidden" name="prev_next" value="0">
-                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages 0).Timestamp }}">
-                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages 0).Channel }}">
-                    <input type="hidden" value="{{ $From }}" name="from">
-                    <input type="hidden" value="{{ $To }}" name="to">
-                    <button style="font-size: 12px; margin: 6px" type="submit">Previous Messages</button>
-                </form>
-                {{ range $Message := $Conversation.Messages }}
-                    {{ if eq .SubType "message_deleted" }}
-                        {{ if .PreviousMessage }}
-                            <header>
-                                <b>{{ $Message.PreviousMessage.User }}</b>
-                                <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-                            </header>
-                            <footer>
-                                <del>{{ .PreviousMessage.Text }}</del>
-                            </footer>
-                        {{ else }}
-                            <header>
-                                <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
-                            </header>
-                            <footer>[message deleted]</footer>
-                        {{ end }}
-                    {{ else if eq .SubType "message_replied" }}
-                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
-                        {{ if .SubMessage }}
-                            <blockquote>
-                                <ul>
-                                    <li>
-                                        <small><b>{{ .SubMessage.User }}</b> {{ .EventTimestamp }}</small>
-                                    </li>
-                                    <li>
-                                        <small>{{ .SubType }}</small>
-                                    </li>
-                                </ul>
-                            </blockquote>
-                        {{ else }}
-                            <div>[can't see response]</div>
-                        {{ end }}
+{{define "title"}}PECAN Search{{end}}
+{{template "header"}}
+<form method="get" action="/search">
+    <fieldset class="flex four">
+        <label class="full"><input type="search" placeholder="Search for messages" name="q" value="{{ .Query }}"></label>
+        <label><input type="date" value="{{ .From }}" name="from"></label>
+        <label><input type="date" value="{{ .To }}" name="to"></label>
+        <input type="hidden" name="start" value="0">
+        <label><input type="submit" value="Search"></label>
+    </fieldset>
+</form>
+<hr>
+{{ if .Conversations }}
+    <h4>Found {{ len .Conversations }} conversations:</h4>
+{{ else }}
+    <h4>No conversations found.</h4>
+{{ end }}
+{{ $Type := .Type }}
+{{ $From := .From }}
+{{ $To := .To }}
+<div class="flex one">
+    {{ range $Conversation := .Conversations }}
+        <article class="card">
+            <p>{{ len $Conversation.Messages }} Messages from {{ (index $Conversation.Messages 0).EventTimestamp }} to {{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).EventTimestamp }} in {{ (index $Conversation.Messages 0).Channel }}</p>
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="0">
+                <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages 0).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages 0).Channel }}">
+                <input type="hidden" value="{{ $From }}" name="from">
+                <input type="hidden" value="{{ $To }}" name="to">
+                <button style="font-size: 12px; margin: 6px" type="submit">Previous Messages</button>
+            </form>
+            {{ range $Message := $Conversation.Messages }}
+                {{ if eq .SubType "message_deleted" }}
+                    {{ if .PreviousMessage }}
+                        <header>
+                            <b>{{ $Message.PreviousMessage.User }}</b>
+                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                        </header>
+                        <footer>
+                            <del>{{ .PreviousMessage.Text }}</del>
+                        </footer>
                     {{ else }}
-                        <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
-                        <hr>
+                        <header>
+                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                        </header>
+                        <footer>[message deleted]</footer>
                     {{ end }}
-                {{end}}
-                <form method="post" action="/more_messages">
-                    <input type="hidden" name="prev_next" value="1">
-                    <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Timestamp }}">
-                    <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Channel }}">
-                    <input type="hidden" value="{{ $From }}" name="from">
-                    <input type="hidden" value="{{ $To }}" name="to">
-                    <button style="font-size: 12px; margin: 6px" type="submit">Next Messages</button>
-                </form>
-            </article>
-        {{ end }}
-    </div>
-    <div class="flex two">
-        {{ if gt .Next -1 }}
-            <form method="get" action="/">
-                <input type="hidden" name="start" value="{{ .Next }}">
-                <input type="hidden" name="q" value="{{ .Query }}">
-                <input type="hidden" name="from" value="{{ .From }}">
-                <input type="hidden" name="to" value="{{ .To }}">
-                <label><input type="submit" value="Next"></label>
+                {{ else if eq .SubType "message_replied" }}
+                    <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
+                    {{ if .SubMessage }}
+                        <blockquote>
+                            <ul>
+                                <li>
+                                    <small><b>{{ .SubMessage.User }}</b> {{ .EventTimestamp }}</small>
+                                </li>
+                                <li>
+                                    <small>{{ .SubType }}</small>
+                                </li>
+                            </ul>
+                        </blockquote>
+                    {{ else }}
+                        <div>[can't see response]</div>
+                    {{ end }}
+                {{ else }}
+                    <small><span style="color: #aaaaaa">{{ .EventTimestamp }} {{ $Message.User }}</span> {{ .Text }}</small>
+                    <hr>
+                {{ end }}
+            {{end}}
+            <form method="post" action="/more_messages">
+                <input type="hidden" name="prev_next" value="1">
+                <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Timestamp }}">
+                <input type="hidden" name="base_message_channel" value="{{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).Channel }}">
+                <input type="hidden" value="{{ $From }}" name="from">
+                <input type="hidden" value="{{ $To }}" name="to">
+                <button style="font-size: 12px; margin: 6px" type="submit">Next Messages</button>
             </form>
-        {{ end }}
-        {{ if gt .Prev -1 }}
-            <form method="get" action="/">
-                <input type="hidden" name="start" value="{{ .Prev }}">
-                <input type="hidden" name="q" value="{{ .Query }}">
-                <input type="hidden" name="from" value="{{ .From }}">
-                <input type="hidden" name="to" value="{{ .To }}">
-                <label><input type="submit" value="Previous"></label>
-            </form>
-        {{ end }}
-    </div>
-</main>
-</body>
-
-</html>
+        </article>
+    {{ end }}
+</div>
+<div class="flex two">
+    {{ if gt .Next -1 }}
+        <form method="get" action="/">
+            <input type="hidden" name="start" value="{{ .Next }}">
+            <input type="hidden" name="q" value="{{ .Query }}">
+            <input type="hidden" name="from" value="{{ .From }}">
+            <input type="hidden" name="to" value="{{ .To }}">
+            <label><input type="submit" value="Next"></label>
+        </form>
+    {{ end }}
+    {{ if gt .Prev -1 }}
+        <form method="get" action="/">
+            <input type="hidden" name="start" value="{{ .Prev }}">
+            <input type="hidden" name="q" value="{{ .Query }}">
+            <input type="hidden" name="from" value="{{ .From }}">
+            <input type="hidden" name="to" value="{{ .To }}">
+            <label><input type="submit" value="Previous"></label>
+        </form>
+    {{ end }}
+</div>
+{{template "footer"}}
