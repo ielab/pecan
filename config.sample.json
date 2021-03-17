@@ -1,9 +1,12 @@
 {
-  "slack": {
-    "token": "supersecret",
-    "verification_token": "supersecret",
-    "client_id": "supersecret",
-    "client_secret": "supersecret"
+  "api": {
+    "use": "none",
+    "slack": {
+      "token": "supersecret",
+      "verification_token": "supersecret",
+      "client_id": "supersecret",
+      "client_secret": "supersecret"
+    }
   },
   "elasticsearch": {
     "login": {
