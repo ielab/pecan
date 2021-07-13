@@ -45,14 +45,14 @@ func (exec *TaskExecutor) GetMessages(ctx context.Context, request SearchRequest
 	return exec.api.GetMessages(exec.es, ctx, request)
 }
 
-func (exec *TaskExecutor) GetConversations(ctx context.Context, request SearchRequest) ([]Conversation, error) {
+func (exec *TaskExecutor) GetConversations(ctx context.Context, api ChatAPI, request SearchRequest) ([]Conversation, error) {
 	messages, err := exec.GetMessages(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	var conversations []Conversation
 	for i := range messages {
-		conversation, err := exec.BoundsFunc(exec.es, ctx, messages[i].Channel, messages[i], request)
+		conversation, err := exec.BoundsFunc(exec.es, api, ctx, messages[i].Channel, messages[i], request)
 		if err != nil {
 			return nil, err
 		}
@@ -66,12 +66,10 @@ func (exec *TaskExecutor) GetConversations(ctx context.Context, request SearchRe
 	if err != nil {
 		return nil, err
 	}
-
 	scored, err := exec.ScoreFunc(merged)
 	if err != nil {
 		return nil, err
 	}
-
 	sort.Slice(scored, func(i, j int) bool {
 		return scored[i].Score > scored[j].Score
 	})

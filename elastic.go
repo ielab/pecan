@@ -2,10 +2,8 @@ package pecan
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/olivere/elastic/v7"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -17,6 +15,7 @@ type Message struct {
 	PreviousMessage *Message `json:"previous_message,omitempty"`
 	SubMessage      *Message `json:"message,omitempty"`
 	Channel         string   `json:"channel,omitempty"`
+	ChannelName     string   `json:"channel_name,omitempty"`
 	EventTimestamp  string   `json:"event_ts,omitempty"`
 	Timestamp       string   `json:"ts,omitempty"`
 	Text            string   `json:"text,omitempty"`
@@ -25,47 +24,6 @@ type Message struct {
 type Conversation struct {
 	Score    float64
 	Messages []Message
-}
-
-// searchResponseToMessages maps responses from elasticsearch into slack messages,
-// leaving slack ids for channels and names unresolved.
-func searchResponseToMessages(resp *elastic.SearchResult) ([]Message, error) {
-	if resp == nil {
-		messages := make([]Message, 0)
-		return messages, nil
-	}
-	messages := make([]Message, len(resp.Hits.Hits))
-	for i, hit := range resp.Hits.Hits {
-		b, err := hit.Source.MarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		var msg Message
-		msg.Id = hit.Id
-		err = json.Unmarshal(b, &msg)
-		if err != nil {
-			return nil, err
-		}
-		// Parse the timestamp into something more readable.
-		t := strings.Split(msg.EventTimestamp, ".")
-		sec, err := strconv.Atoi(t[0])
-		if err != nil {
-			return nil, err
-		}
-		nsec, err := strconv.Atoi(t[1])
-		if err != nil {
-			return nil, err
-		}
-
-		msg.EventTimestamp = time.Unix(int64(sec), int64(nsec)).Format(time.RFC822)
-
-		messages[i] = msg
-		if hit.Score != nil { // Check if it is nil to prevent nil pointer dereference.
-			messages[i].Score = *hit.Score
-		}
-	}
-	return messages, nil
-
 }
 
 // buildChannelFilterQuery constructs an elasticsearch query that corresponds to a filter on selected channels.
@@ -92,7 +50,7 @@ func queryMessages(es *elastic.Client, ctx context.Context, channels []string, r
 }
 
 // MoreMessages retrieves extra messages if required by the user
-func MoreMessages(es *elastic.Client, ctx context.Context, channels []string, request SearchRequest) ([]Message, error) {
+func MoreMessages(es *elastic.Client, api ChatAPI, ctx context.Context, channels []string, request SearchRequest) ([]Message, error) {
 	var result []Message
 	var searchresult *elastic.SearchResult
 	var err error
@@ -110,7 +68,7 @@ func MoreMessages(es *elastic.Client, ctx context.Context, channels []string, re
 				Size(SearchSize).
 				Sort("ts", false).
 				Do(ctx)
-			result, err = searchResponseToMessages(searchresult)
+			result, err = api.ConvertSearchResponseToMessages(searchresult)
 			limit = limit * 2
 			var temp []Message
 			for i := range result {
@@ -146,7 +104,7 @@ func MoreMessages(es *elastic.Client, ctx context.Context, channels []string, re
 				Size(SearchSize).
 				Sort("ts", true).
 				Do(ctx)
-			result, err = searchResponseToMessages(searchresult)
+			result, err = api.ConvertSearchResponseToMessages(searchresult)
 			limit = limit * 2
 			var temp []Message
 			for i := range result {

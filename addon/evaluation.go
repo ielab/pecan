@@ -32,7 +32,7 @@ func (addon *EvaluationAddon) messagesResults(request EvaluationRequest) (trecre
 		SetAggregateFunc(pecan.MustMapAggregateFunc(request.Aggregator)).
 		SetScoreFunc(pecan.MustMapScoreFunc(request.Scorer))
 
-	conversations, err := exec.GetConversations(context.Background(), request.SearchRequest)
+	conversations, err := exec.GetConversations(context.Background(), addon.api, request.SearchRequest)
 	if err != nil {
 		return nil, err
 	}

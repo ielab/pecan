@@ -21,7 +21,7 @@
 <div class="flex one">
     {{ range $Conversation := .Conversations }}
         <article class="card">
-            <p>{{ len $Conversation.Messages }} Messages from {{ (index $Conversation.Messages 0).EventTimestamp }} to {{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).EventTimestamp }} in {{ (index $Conversation.Messages 0).Channel }}</p>
+            <p>{{ len $Conversation.Messages }} Messages from {{ (index $Conversation.Messages 0).EventTimestamp }} to {{ (index $Conversation.Messages (add (len $Conversation.Messages) -1)).EventTimestamp }} in {{ (index $Conversation.Messages 0).ChannelName }}</p>
             <form method="post" action="/more_messages">
                 <input type="hidden" name="prev_next" value="0">
                 <input type="hidden" name="base_message_time" value="{{ (index $Conversation.Messages 0).Timestamp }}">
@@ -35,14 +35,14 @@
                     {{ if .PreviousMessage }}
                         <header>
                             <b>{{ $Message.PreviousMessage.User }}</b>
-                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                            <small>#{{ .ChannelName }} {{ .EventTimestamp }}</small>
                         </header>
                         <footer>
                             <del>{{ .PreviousMessage.Text }}</del>
                         </footer>
                     {{ else }}
                         <header>
-                            <small>#{{ .Channel }} {{ .EventTimestamp }}</small>
+                            <small>#{{ .ChannelName }} {{ .EventTimestamp }}</small>
                         </header>
                         <footer>[message deleted]</footer>
                     {{ end }}

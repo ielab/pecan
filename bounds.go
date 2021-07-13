@@ -6,10 +6,10 @@ import (
 	"strconv"
 )
 
-type BoundsFunc func(es *elastic.Client, ctx context.Context, channel string, message Message, request SearchRequest) ([]Message, error)
+type BoundsFunc func(es *elastic.Client, api ChatAPI, ctx context.Context, channel string, message Message, request SearchRequest) ([]Message, error)
 
 // TimeBounder retrieves messages in a conversation based on original messages
-func TimeBounder(es *elastic.Client, ctx context.Context, channel string, message Message, request SearchRequest) ([]Message, error) {
+func TimeBounder(es *elastic.Client, api ChatAPI, ctx context.Context, channel string, message Message, request SearchRequest) ([]Message, error) {
 	t, err := strconv.ParseFloat(message.Timestamp, 64)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func TimeBounder(es *elastic.Client, ctx context.Context, channel string, messag
 	if err != nil {
 		return nil, err
 	}
-	leftMessages, err := searchResponseToMessages(left)
+	leftMessages, err := api.ConvertSearchResponseToMessages(left)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func TimeBounder(es *elastic.Client, ctx context.Context, channel string, messag
 	if err != nil {
 		return nil, err
 	}
-	rightMessages, err := searchResponseToMessages(right)
+	rightMessages, err := api.ConvertSearchResponseToMessages(right)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,7 @@ func TimeBounder(es *elastic.Client, ctx context.Context, channel string, messag
 	for i, j := 0, len(leftMessages)-1; j > i; i, j = i+1, j-1 {
 		leftMessages[i], leftMessages[j] = leftMessages[j], leftMessages[i]
 	}
+
 	//return leftMessages, nil
 	return append(leftMessages, rightMessages...), nil
 }

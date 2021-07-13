@@ -112,10 +112,10 @@ func main() {
 		// If a query has been submitted, run a search.
 		// Otherwise show recent messages.
 		if err := c.ShouldBind(&request); err == nil && len(request.Query) > 0 {
-			//request.Context = c
+			request.Context = c
 			request.Index = config.Elasticsearch.Index
 			// Determine which method should be used to search.
-			conversations, err = exec.GetConversations(ctx, request)
+			conversations, err = exec.GetConversations(ctx, api, request)
 			if err != nil {
 				panic(err)
 			}
@@ -157,7 +157,7 @@ func main() {
 		if err := c.ShouldBind(&request); err == nil {
 			var channel []string
 			channel = append(channel, request.BaseMessageChannel)
-			messages, err = pecan.MoreMessages(es, ctx, channel, request)
+			messages, err = pecan.MoreMessages(es, api, ctx, channel, request)
 		}
 		response := pecan.SearchResponse{
 			Messages: messages,

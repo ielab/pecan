@@ -12,10 +12,10 @@ type Config struct {
 	API struct {
 		Use   string `json:"use"`
 		Slack struct {
-			Token             string `json:"token"`
-			VerificationToken string `json:"verification_token"`
-			ClientId          string `json:"client_id"`
-			ClientSecret      string `json:"client_secret"`
+			Token         string `json:"token"`
+			ClientId      string `json:"client_id"`
+			ClientSecret  string `json:"client_secret"`
+			SigningSecret string `json:"signing_secret"`
 		} `json:"slack"`
 	}
 	Elasticsearch struct {

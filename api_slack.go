@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/nlopes/slack"
 	"github.com/olivere/elastic/v7"
 	"github.com/patrickmn/go-cache"
+	"github.com/slack-go/slack"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -28,7 +28,7 @@ type SlackChatAPI struct {
 
 // searchResponseToMessagesUsingAPI maps responses from elasticsearch into slack messages
 // using the slack API to resolve channel and user names.
-func (api *SlackChatAPI) searchResponseToMessagesUsingAPI(resp *elastic.SearchResult) ([]Message, error) {
+func (api *SlackChatAPI) ConvertSearchResponseToMessages(resp *elastic.SearchResult) ([]Message, error) {
 	messages := make([]Message, len(resp.Hits.Hits))
 	for i, hit := range resp.Hits.Hits {
 		b, err := resp.Hits.Hits[i].Source.MarshalJSON()
@@ -72,7 +72,7 @@ func (api *SlackChatAPI) searchResponseToMessagesUsingAPI(resp *elastic.SearchRe
 		if err != nil {
 			return nil, err
 		}
-		msg.Channel = name
+		msg.ChannelName = name
 
 		// Parse the timestamp into something more readable.
 		t := strings.Split(msg.EventTimestamp, ".")
@@ -120,11 +120,13 @@ func (api *SlackChatAPI) LookupGroupNameByID(id string) (string, error) {
 	if name, ok := api.channelCache[id]; ok {
 		return name, nil
 	}
-	g, err := api.client.GetGroupInfo(id)
-	if err == nil {
-		api.channelCache[id] = g.Name
-		return g.Name, nil
-	}
+
+	// TODO Looks like this function is superseded by the one below? Need to double check.
+	//g, err := api.client.GetGroupInfo(id)
+	//if err == nil {
+	//	api.channelCache[id] = g.Name
+	//	return g.Name, nil
+	//}
 
 	c, err := api.client.GetConversationInfo(id, true)
 	if err == nil {
@@ -160,7 +162,7 @@ func (api *SlackChatAPI) GetChannelsForUser(accessToken string) ([]string, error
 
 	api.client = slack.New(accessToken)
 	// Private groups user has access to.
-	groups, err := api.client.GetGroups(false)
+	groups, err := api.client.GetUserGroups()
 	if err != nil {
 		return nil, err
 	}
@@ -171,13 +173,7 @@ func (api *SlackChatAPI) GetChannelsForUser(accessToken string) ([]string, error
 		return nil, err
 	}
 
-	// Direct message channels for the calling user.
-	ims, err := api.client.GetIMChannels()
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, len(groups)+len(conversations)+len(ims))
+	ids := make([]string, len(groups)+len(conversations))
 	for i := range groups {
 		ids[i] = groups[i].ID
 	}
@@ -185,10 +181,11 @@ func (api *SlackChatAPI) GetChannelsForUser(accessToken string) ([]string, error
 		ids[i] = conversations[j].ID
 		j++
 	}
-	for i, j := len(groups)+len(conversations), 0; i < len(ids); i++ {
-		ids[i] = ims[j].ID
-		j++
-	}
+	//TODO Maybe still need private chats? Need to double check.
+	//for i, j := len(groups)+len(conversations), 0; i < len(ids); i++ {
+	//	ids[i] = ims[j].ID
+	//	j++
+	//}
 
 	api.idsCache.SetDefault(accessToken, ids)
 
@@ -210,7 +207,7 @@ func (api *SlackChatAPI) GetMessages(es *elastic.Client, ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
-	return api.searchResponseToMessagesUsingAPI(resp)
+	return api.ConvertSearchResponseToMessages(resp)
 }
 
 func randState() string {
@@ -251,7 +248,7 @@ func (api *SlackChatAPI) HandleAuthentication(c *gin.Context) {
 		c.Abort()
 		return
 	} else {
-		if _, err := slack.New(accessToken).GetIMChannels(); err != nil {
+		if _, err := slack.New(accessToken).AuthTest(); err != nil {
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
 			return
